@@ -1,0 +1,262 @@
+---
+title: "Simulación"
+author: "Ana Xiangning Pereira Ezquerro"
+date:  "Versión `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    number_sections: yes
+    latex_engine: lualatex
+    fig_caption: yes
+    toc: yes
+    highlight: tango
+    df_print: kable
+    citation_package: biblatex
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    number_sections: true
+    theme: hpstr
+    highlight: tango
+  prettydoc::html_pretty:
+    toc: true
+    df_print: paged
+    number_sections: true
+    theme: hpstr
+    highlight: github
+fontsize: 12pt
+geometry: margin=0.7in
+classoption: a4paper
+documentclass: article
+header-includes:
+- \usepackage{sfmath}
+- \renewcommand*\familydefault{\sfdefault}
+- \renewcommand{\baselinestretch}{1.2}
+- \setlength{\parskip}{1em}
+- \input{confi.tex}
+always_allow_html: yes
+bibliography: references.bib
+biblio-style: bwl-FU
+linkcitations: true
+linkcolor: blue
+lang: es
+---
+
+
+```{r, echo=F, warning=F, message=F}
+knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
+                      fig.height = 8, message=F, warning = F,
+                      comment='##')
+eval(parse("funciones.R", encoding="UTF-8"))
+eval(parse("arima_simulation.R", encoding="UTF-8"))
+
+library(fpp2)
+library(tseries)
+library(TSA)
+library(latex2exp)
+library(plotly)
+library(seastests)
+library(prettydoc)
+
+server <- orca_serve()
+
+# Función para mostrar y guardar las gráficas de plotly
+display <- function(fig, name, width=800, height=400) {
+  
+  if (is.null(knitr::opts_knit$get("rmarkdown.pandoc.to"))) {
+    return(fig)
+  }
+  if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "latex") {
+    figpath <- paste0('figures/', name, ".pdf")
+    server$export(fig, figpath, width=width, height=height)
+    return(knitr::include_graphics(figpath))
+  }
+  if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "html") {
+    return(fig)
+  }
+}
+```
+
+
+# Simulación de un modelo de regresión dinámico con retardo $r=0$
+
+Vamos a suponer un modelo de regresión donde intervienen tres variables regresoras sin retardo:
+
+\[ Y_t = \beta_0 + \beta_1 X_t^{(1)} + \beta_2 X_t^{(2)} + \beta_3 X_t^{(3)} + \eta_t\]
+
+donde:
+
+* $\eta_t \sim$ ARMA(2, 1).
+* $X_t^{(1)} \sim$ ARIMA(2, 1, 3).
+* $X_t^{(2)} \sim$ ARMA(1, 1, 2).
+* $X_t^{(3)} \sim$ ARMA(1, 0, 2).
+
+
+```{r}
+n <- 500
+
+# Cargamos los datos sobre las variables regresoras
+load(file='simulaciones/X1 ~ ARIMA(2,1,3).RData') # X1
+load(file='simulaciones/X2 ~ ARIMA(1,1,2).RData') # X2
+load(file='simulaciones/X3 ~ ARIMA(1,0,2).RData') # X3
+load(file='simulaciones/residuals ~ ARIMA(2,0,1).RData') # residuals
+
+# Podemos realizar una comprobación 
+auto.fit.arima(X1$X, seasonal=F, show_info=F)
+auto.fit.arima(X2$X, seasonal=F, show_info=F)
+auto.fit.arima(X3$X, seasonal=F, show_info=F)
+auto.fit.arima(residuals$X, seasonal=F, show_info=F)
+```
+
+Y creamos el modelo:
+
+```{r}
+beta0 <- 0.8; beta1 <- 2.8; beta2 <- -1.12; beta3 <- -2.3
+Y <- beta0 + beta1 * X1$X + beta2 * X2$X + beta3 * X3$X + residuals$X
+```
+
+Añadimos variables independientes a `Y`:
+
+```{r}
+load(file='simulaciones/X4 ~ ARIMA(1,1,3).RData')
+load(file='simulaciones/X5 ~ ARIMA(0,0,2).RData')
+load(file='simulaciones/X6 ~ ARIMA(2,1,1).RData')
+
+auto.fit.arima(X4$X, seasonal=F, show_info=F)
+auto.fit.arima(X5$X, seasonal=F, show_info=F)
+auto.fit.arima(X6$X, seasonal=F, show_info=F)
+```
+
+
+Y comprobamos la solución de la función `auto.fit.arima.regression`:
+
+```{r}
+regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
+auto.fit.arima.regression(Y, regresoras, seasonal=F, show_info=T)
+```
+
+\newpage
+
+# Simulación de un modelo de regresión dinámico con retardos $r\geq 0$
+
+Vamos a suponer un modelo de regresión donde intervienen tres variables regresoras con retardos:
+
+\[ Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \beta_2 X_{t-r_2}^{(2)} + \beta_3 X_{t-r_3}^{(3)} + \eta_t\]
+
+donde:
+
+* $\eta_t \sim$ ARMA(2, 1).
+* $X_t^{(1)} \sim$ ARIMA(2, 1, 3)  y su retardo $r_1=-2$.
+* $X_t^{(2)} \sim$ ARMA(1, 1, 2) y su retardo $r_2=0$. 
+* $X_t^{(3)} \sim$ ARMA(1, 0, 2) y su retardo $r_3=-3$.
+
+```{r}
+beta0 <- -0.1; beta1 <- 1.2; beta2 <- -4.2; beta3 <- 2.1
+r1 <- -2; r3 <- -1
+Y <- beta0 + beta1 * lag(X1$X, r1) + beta2 * X2$X + beta3 * lag(X3$X, r3) + residuals$X
+```
+
+
+```{r}
+regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
+regresoras <- as.data.frame(lapply(regresoras, window, start=start(Y)[1], end=end(Y)[1]))
+ajuste <- auto.fit.arima.regression(Y, regresoras, seasonal=F, show_info=T)
+```
+
+
+\newpage
+
+# Simulación de un modelo de regresión dinámico con errores ARIMA ($d=1$)
+
+## Modelo con retardos $r=0$
+
+Tomamos el modelo anterior donde $r=0$ pero esta vez $\eta_t \sim $ARIMA(1, 1, 2):
+
+```{r}
+load('simulaciones/residuals ~ ARIMA(1, 1, 2).RData')
+beta0 <- 0.8; beta1 <- 2.8; beta2 <- -1.12; beta3 <- -2.3
+Y <- beta0 + beta1 * X1$X + beta2 * X2$X + beta3 * X3$X + residuals$X
+```
+
+
+Ajustamos el modelo con las variables originales (no diferenciamos ninguna):
+```{r}
+regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
+auto.fit.arima.regression(Y, regresoras, seasonal=F, show_info=T)
+```
+
+Ahora ajustamos el modelo diferenciando todas las variables:
+```{r}
+regresoras <- as.data.frame(lapply(regresoras, diff, lag=1))
+auto.fit.arima.regression(diff(Y, 1), regresoras, seasonal=F, show_info=T)
+```
+
+
+
+## Modelo con retardos $r<0$
+
+
+```{r}
+# Creación del modelo con los nuevos residuos
+beta0 <- -0.1; beta1 <- 1.2; beta2 <- -4.2; beta3<- 3.3
+r1 <- -2; r3 <- -1
+Y <- beta0 + beta1 * lag(X1$X, r1) + beta2 * X2$X + beta3 * lag(X3$X, r3) + residuals$X
+
+# Estimación con las variables originales
+regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
+regresoras <- as.data.frame(lapply(regresoras, window, start=start(Y)[1], end=end(Y)[1]))
+auto.fit.arima.regression(Y, regresoras, seasonal=F, show_info=T)
+
+# Estimación con las variables diferenciadas
+regresoras <- as.data.frame(lapply(regresoras, diff, lag=1))
+auto.fit.arima.regression(diff(Y, 1), regresoras, seasonal=F, show_info=T)
+```
+
+
+\newpage
+
+# Comparativa del método de preblanqueado
+
+## Preblanqueado en base al `adf.test`
+
+Creamos variables regresoras con órdenes $d$ distintos y retardos distintos:
+
+```{r}
+# Variables que influyen en el modelo
+load(file='simulaciones/X1 ~ ARIMA(2,1,3).RData')
+load(file='simulaciones/X2 ~ ARIMA(1,2,1).RData')
+load(file='simulaciones/X3 ~ ARIMA(1,0,2).RData')
+load(file='simulaciones/X4 ~ ARIMA(1,1,3).RData')
+load(file='simulaciones/X5 ~ ARIMA(0,1,2).RData')
+load(file='simulaciones/X6 ~ ARIMA(2,1,1).RData')
+load(file='simulaciones/residuals ~ ARIMA(2,0,1).RData')
+```
+
+
+```{r}
+beta0 <- -0.1; beta1 <- 8.2; beta2 <- -0.5
+r1 <- -2; r2 <- -3
+Y <- beta0 + beta1 * lag(X1$X, r1) + beta2 * lag(X2$X, r2) + residuals$X
+```
+
+Ajustamos un modelo usando como método para chequear estacionariedad la función `auto.arima`:
+```{r}
+regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
+regresoras <- as.data.frame(lapply(regresoras, window, start=start(Y)[1], end=end(Y)[1]))
+auto.fit.arima.regression(Y, regresoras, seasonal=F, show_info=T, stationary_method='auto.arima')
+```
+
+Ajustamos un modelo usando como método para chequear estacionariedad el `adf.test`:
+
+```{r}
+regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
+regresoras <- as.data.frame(lapply(regresoras, window, start=start(Y)[1], end=end(Y)[1]))
+ajuste <- auto.fit.arima.regression(Y, regresoras, seasonal=F, show_info=T,
+                                    stationary_method='adf.test')
+```
+
+
+
+
+
+
