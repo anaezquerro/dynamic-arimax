@@ -1,20 +1,3 @@
-
-library(fpp2)
-library(tseries)
-library(TSA)
-library(latex2exp)
-library(plotly)
-library(seastests)
-library(stringr)
-library(stringi)
-library(polynom)
-eval(parse("plot_tools.R", encoding="UTF-8"))
-eval(parse("auto_fit_arima.R", encoding="UTF-8"))
-
-
-
-
-
 #' Selección automática de variables regresoras en un modelo de regresión dinámica
 #' 
 #' \deqn{ Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \beta_2 X_{t-r_2}^{(2)} + \cdots 
@@ -32,7 +15,6 @@ eval(parse("auto_fit_arima.R", encoding="UTF-8"))
 #'
 #' @param serie Serie temporal que funciona como variable respuesta.
 #' @param xregs Conjunto de variables candidatas a ser variables regresoras de `serie`.
-#' @param seasonal Valor booleano que indica si `serie` tiene componente estacional.
 #' @param ic Criterio de información sobre el que se seleccionarán variables regresoras 
 #' y se comparará la efectividad de un ajuste.
 #' @param alpha Nivel de significación para los contrastes de hipótesis de estacionariedad 
@@ -45,6 +27,7 @@ eval(parse("auto_fit_arima.R", encoding="UTF-8"))
 #' para chequear la estacionariedad de una serie temporal.
 #' @param show_info Valor booelano que indica si mostrar o no por pantalla los modelos 
 #' que se van ajustando, así como información relacionada con la selección de variables.
+#' @param ndiff
 #'
 #' @returns Ajuste del modelo ARIMAX con las variables regresoras seleccionadas. Si dicho 
 #' ajuste no existe (o no es posible de optimizar), devuelve el ajuste válido de un 
@@ -52,14 +35,16 @@ eval(parse("auto_fit_arima.R", encoding="UTF-8"))
 #' posible de optimizar), devuelve `NA`.
 #' @export
 #'
-auto.fit.arima.regression <- function(serie, xregs, seasonal=T, ic='aicc', alpha=0.05, 
-                                      stationary_method='auto.arima', show_info=T) {
+
+auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05, 
+                                      stationary_method='auto.arima', show_info=T, 
+                                      ndiff=0) {
     
     # Comprobación de argumentos
     if (class(xregs) != 'data.frame') {
         stop('El argumento `xregs` debe ser un data.frame')
     }
-    if (!all(unlist(lapply(xregs, class))) == "ts") {
+    if (!all(unlist(lapply(xregs, class)) == "ts")) {
         stop('Las variables regresoras del data.frame `xregs` deben ser de tipo ts')
     }
     if (class(serie) != 'ts') {
@@ -83,6 +68,12 @@ auto.fit.arima.regression <- function(serie, xregs, seasonal=T, ic='aicc', alpha
     
     # Inicio del bucle para añadir variables regresoras
     for (i in 1:ncol(xregs)) {
+        if (show_info) {
+            cat('----------------------------------------------------------------------\n')
+            cat(paste0('Iteración ', i, ' del algoritmo\n'))
+            cat('----------------------------------------------------------------------\n')
+        }
+        
         # Inicialzación de parámetros
         best_xreg <- NA            # nombre de la variable regresora que se añadirá
         best_xreg_lag <- NA        # retardo de la variable regresora que se añadirá
@@ -118,7 +109,7 @@ auto.fit.arima.regression <- function(serie, xregs, seasonal=T, ic='aicc', alpha
             
             # Ajuste del modelo de regresión dinámica con la nueva variable regresora
             ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
-                                     seasonal=seasonal, ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
+                                     ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
             
             # Si no se consigue un ajuste válido, se prueba con la siguiente variable
             if (all(is.na(ajuste))) {   
@@ -144,28 +135,6 @@ auto.fit.arima.regression <- function(serie, xregs, seasonal=T, ic='aicc', alpha
         
         # Comprobación: Se tienen que haber añadido alguna variable al modelo
         if (!added) {
-            
-            # Si no se han añadido variables al modelo y además el model_history está vacío 
-            # (es decir, no hay variables regresoras que aporten algo a la variable respuesta),
-            # se trata de ajustar un modelo ARIMA sin regresoras
-            if (all(is.na(model_history))) {
-                global_fit <- auto.fit.arima(serie, seasonal=seasonal, ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
-                best_ic <- global_fit[[ic]]
-                
-                # En el caso de que tampoco haya un ARIMA válido sin regresoras
-                if (all(is.na(global_fit))) {
-                    stop('Ningún modelo es válido')
-                }
-                
-                if (show_info) {
-                    cat('----------------------------------------------------------------------\n')
-                    cat(paste0('Modelo (sin variables regresoras) [', ic, '=', best_ic, ']\n'))
-                    cat('----------------------------------------------------------------------\n')
-                    print(global_fit, row.names=F)
-                    cat('**********************************************************************\n\n\n')
-                }
-                return(global_fit)
-            }
             break
         }
         
@@ -175,7 +144,6 @@ auto.fit.arima.regression <- function(serie, xregs, seasonal=T, ic='aicc', alpha
             cat(paste0('Se ha añadido la variable regresora ', names(xregs)[best_xreg], ' [', ic, '=', best_ic, ']\n'))
             cat('----------------------------------------------------------------------\n')
             print(global_fit, row.names=F)
-            cat('**********************************************************************\n\n\n')
         }
         
         # Se añade al historial del modelo la nueva variable añadida
@@ -185,14 +153,71 @@ auto.fit.arima.regression <- function(serie, xregs, seasonal=T, ic='aicc', alpha
         response <- residuals(global_fit, type='regression')
     }
     
-    # Finalización del bucle para añadir variables regresoras
-    if (show_info) {
-        cat('No se añaden más variables\n\n')
+    
+    # Si ya no entran más variables (y ha entrado al menos una) se ajusta el 
+    # modelo completo donde las innovaciones sigan un proceso ARMA
+    if (!any(is.na(model_history))) {
+        data_new <- construct.data(model_history, serie, xregs, new_xreg_name = NULL, 
+                                   optimal_lag = NULL, max_lag = max_lag)
+        global_fit <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)],
+                                     ic=ic, d=0, D=0, alpha=alpha, show_info=F)    
+        
+        # Si se consigue un modelo válido, se devuelve
+        if (is_valid(global_fit)) {
+            best_ic <- global_fit[[ic]]
+            
+            if (show_info) {
+                cat('No se añaden más variables\n\n')
+            }
+            if (ndiff > 1) {
+                warning(paste0('Se han aplicado ', ndiff, ' diferencias regulares'))
+            }
+            
+            cat('----------------------------------------------------------------------\n')
+            cat('|            Histórico de variables añadidas al modelo                |\n')
+            cat('----------------------------------------------------------------------\n')
+            print(model_history, row.names=F)
+            return(global_fit)
+        }
     }
-    cat('----------------------------------------------------------------------\n')
-    cat('|            Histórico de variables añadidas al modelo                |\n')
-    cat('----------------------------------------------------------------------\n')
-    print(model_history, row.names=F)
+    
+    
+    # Si el model_history está vacío  (es decir, no hay variables regresoras que 
+    # aporten algo a la variable respuesta), o no se ha podido ajustar uno con 
+    # errores ARMA, se trata de de:
+    # a) Diferenciar todas las variables y volver a llamar a la función auto.fit.arima.regression
+    # b) Si ndiff=2 no se recomienda diferenciar más y se ajusta un ARIMA sin regresoras
+    if (ndiff < 3) {
+        warning(paste0('No se ha podido encontrar un modelo válido\n',
+                       'Se aplica una diferenciación regular (ndiff=', ndiff+1, 
+                       ') y se vuelve a llamar a la función\n'))
+        
+        serie <- diff(serie)
+        xregs <- as.data.frame(lapply(xregs, diff))
+        return(
+            auto.fit.arima.regression(serie, xregs, seasonal, ic, alpha, stationary_method, 
+                                      show_info, ndiff+1)
+        )
+    }
+    
+    # En otro caso se intenta ajustar un ARIMA sin variables regresoras
+    global_fit <- auto.fit.arima(serie, seasonal=seasonal, ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
+    
+    # En el caso de que tampoco haya un ARIMA válido sin regresoras
+    if (!is_valid(global_fit)) {
+        stop('Ningún modelo es válido')
+    } 
+    
+    # En caso de que sí lo haya, se devuelve éste
+    best_ic <- global_fit[[ic]]
+    
+    if (show_info) {
+        cat('----------------------------------------------------------------------\n')
+        cat(paste0('Modelo (sin variables regresoras cond d=', ndiff, ') [', ic, '=', best_ic, ']\n'))
+        cat('----------------------------------------------------------------------\n')
+        print(global_fit, row.names=F)
+        cat('----------------------------------------------------------------------\n')
+    }
     return(global_fit)
 }
 
@@ -213,8 +238,10 @@ auto.fit.arima.regression <- function(serie, xregs, seasonal=T, ic='aicc', alpha
 #' @param serie Serie temporal que funciona como variable respuesta.
 #' @param xregs Conjunto de variables candidatas a ser variables regresoras de `serie`.
 #' @param new_xreg_name Nombre de la nueva variable regresora que se quiere añadir al 
-#' modelo.
-#' @param optimal_lag Retardo óptimo de la nueva variable a incluir.
+#' modelo. Si es `NULL` se asume que no se quiere añadir ninguna variable nueva y la 
+#' matriz se contruye en base a las que ya están en el historial.
+#' @param optimal_lag Retardo óptimo de la nueva variable a incluir. Puede ser `NULL` en 
+#' caso de que `new_xreg_name` también lo sea.
 #' @param max_lag Retardo máximo de todos los retardos óptimos (en valor absoluto) del 
 #' conjunto de variables regresoras.
 #'
@@ -223,28 +250,28 @@ auto.fit.arima.regression <- function(serie, xregs, seasonal=T, ic='aicc', alpha
 #'
 construct.data <- function(model_history, serie, xregs, new_xreg_name, optimal_lag, max_lag) {
     
-    # Obtenemos la nueva variable a introducir y la retardamos 
-    new_xreg <- if (optimal_lag < 0) lag(xregs[[new_xreg_name]], optimal_lag) else xregs[[new_xreg_name]]
-    
-    # Si no hay más variables en el modelo, devolvemos (serie, new_xreg)
-    if (all(is.na(model_history))) {
+    # Añadimos la nueva variable a introducir (si la hay)
+    if (is.null(new_xreg_name)) {
+        # si no hay una nueva variable, añadimos la variable respuesta
+        data <- cbind(serie=window(serie, start=start(serie)[1]+max_lag))
+    } else {
+        # si la hay, la añadimos junto con la variable 
+        new_xreg <- if (optimal_lag < 0) lag(xregs[[new_xreg_name]], optimal_lag) else xregs[[new_xreg_name]]
         data <- cbind(serie=window(serie, start=start(serie)[1]+max_lag), 
                       new_xreg_name=window(new_xreg, start=start(serie)[1]+max_lag))
-    } 
-    
-    # Si las hay, las añadimos a la matriz con su nombre
-    else {
-        data <- cbind(serie=window(serie, start=start(serie)[1]+max_lag))
-        
+        colnames(data) <- c('serie', new_xreg_name)
+    }
+
+    # Si hay más variables en el historial del modelo, las añadimos a data
+    if (!all(is.na(model_history))) {
+        prior_names <- if (!is.null(ncol(data))) colnames(data) else c('serie')
         for (j in 1:nrow(model_history)) {
             data <- cbind(data, 
                           window(lag(xregs[[model_history$var[j]]], as.integer(model_history$lag[j])), 
                                  start=start(serie)+max_lag))
         }
-        
-        data <- cbind(data, new_xreg_name=window(new_xreg, start=start(serie)[1]+max_lag))
-        colnames(data) <- c('serie', model_history$var, new_xreg_name)
-    }
+        colnames(data) <- c(prior_names, model_history$var)
+    } 
     return(data)
 }
 
@@ -274,7 +301,8 @@ has_trend <- function(x, test='auto.arima', alpha=0.05) {
         return(d>0)
     }
     if (test == 'adf.test') {
-        return(alpha <= suppressWarnings(adf.test(x))$p.value)
+        pvalue <- suppressWarnings(adf.test(x[!is.na(x)])$p.value)
+        return(alpha <= pvalue)
     }
 }
 
@@ -296,8 +324,8 @@ has_trend <- function(x, test='auto.arima', alpha=0.05) {
 #' se devuelve `NA`.
 #' @export
 #'
-select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto-arima') {
-    if (!test %in% c('auto.arima', 'adf.test')) {
+select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto.arima') {
+    if (!method %in% c('auto.arima', 'adf.test')) {
         stop('El parámetro `method` debe ser "auto.arima" o "adf.test"')
     }
     
@@ -306,15 +334,15 @@ select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto
     x_trend <- has_trend(xreg, test=method)
     
     # Si alguna de ellas la tiene, aplicamos a ambas una diferenciación regular
-    while ((y_trend || x_trend)==TRUE) {
+    while (y_trend || x_trend) {
         serie <- diff(serie)
         xreg <- diff(xreg)
         
-        y_trend <- has_trend(serie, test=method)
-        x_trend <- has_trend(xreg, test=method)
+        y_trend <- has_trend(serie, test=method, alpha=alpha)
+        x_trend <- has_trend(xreg, test=method, alpha=alpha)
     }
     
-    # Cheqeuamos si las series tienen componente estacional (nota, frequency > 1)
+    # Chequeamos si las series tienen componente estacional (nota, frequency > 1)
     y_seasonal <- frequency(serie) > 1 && isSeasonal(serie)
     x_seasonal <- frequency(xreg) > 1 && isSeasonal(xreg)
     

@@ -1,25 +1,9 @@
 
-library(fpp2)
-library(tseries)
-library(TSA)
-library(latex2exp)
-library(plotly)
-library(seastests)
-library(stringr)
-library(stringi)
-library(polynom)
-
-
-
-
-
-
 #' Ajuste automático de un modelo ARIMA o un modelo ARIMAX
 #' 
 #'
 #' @param serie : Serie temporal sobre la que se quiere ajustar un modelo ARIMA.
 #' @param xregs : Conjunto de variables regresoras que inciden en `serie`. 
-#' @param seasonal : Valor booleano que indica si la serie tiene componente estacional.
 #' @param ic : Criterio de información para evaluar los ajustes obtenidos sobre la 
 #' serie de tiempo.
 #' @param d : Valor del orden de diferenciación regular. Por defecto `NA` (se escoge de 
@@ -37,21 +21,20 @@ library(polynom)
 #' ajustar este modelo, se devuelve `NA`.
 #' @export
 #' 
-auto.fit.arima <- function(serie, xregs=NULL, seasonal=T, ic='aicc', d=NA, D=NA, 
-                           alpha=0.05, show_info=T) {
+auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05, show_info=T) {
+    
     if (class(serie) != 'ts') {
         stop('El argumento `serie` debe ser de tipo ts')
     }
     if (!is.null(xregs) && !all(c(unlist(lapply(xregs, class))) == 'ts')) {
         stop('El argumento `xregs` debe ser de tipo ts')
     }
-    
-    
+
     # Selección del mejor modelo con la función auto.arima guardando el historial 
     trace <- capture.output({
         aux <- suppressWarnings(
-            auto.arima(serie, xreg=xregs, d=d, D=D, seasonal=seasonal, ic=ic, max.d=3,
-                       stepwise=FALSE, approximation=FALSE, trace = TRUE) 
+            auto.arima(serie, xreg=xregs, d=d, D=D, seasonal=frequency(serie) > 1, 
+                       ic=ic, max.d=3, stepwise=FALSE, approximation=FALSE, trace = TRUE) 
         )
     })
     con    <- textConnection(trace)
@@ -154,6 +137,7 @@ auto.fit.arima <- function(serie, xregs=NULL, seasonal=T, ic='aicc', d=NA, D=NA,
 }
 
 
+
 #' Obtener los órdenes del modelo ARIMA a partir de su ajuste
 #'
 #' @param ajuste Ajuste del modelo ARIMA.
@@ -248,7 +232,7 @@ fit.coefficients <- function(ajuste, orders, alpha=0.05, show_info=T) {
     
     # Obtenemos los valores de dichos coeficientes y sus desviaciones típicas
     arma_coefs <- ajuste$coef[arma_coefs_names]
-    arma_coefs_sd <- sqrt(diag(ajuste$var.coef[arma_coefs_names, arma_coefs_names])) 
+    arma_coefs_sd <- suppressWarnings(sqrt(diag(ajuste$var.coef[arma_coefs_names, arma_coefs_names])))
     res <- abs(arma_coefs) < stat*arma_coefs_sd
     
     if (!any(res)) { # en caso de que todos sean significativos, se para el bucle
@@ -271,7 +255,7 @@ fit.coefficients <- function(ajuste, orders, alpha=0.05, show_info=T) {
     ajuste <- fit.model(ajuste$x, xreg=ajuste$xreg, orders=orders, fixed=fixed)
     
     # Si no se puede optimizar el modelo se devuelve NA
-    if (all(is.na(ajuste)) || any(is.na(sqrt(diag(ajuste$var.coef))))) { 
+    if (!is_valid(ajuste)) { 
       if (show_info) {warning('No se ha podido optimizar el modelo')}
       return(NA) 
     }
@@ -329,7 +313,9 @@ update.orders <- function(orders, coefs_names, fixed=NULL) {
     mask <- sapply(coefs_names, str_detect, c('mean', 'drift', 'intercept'))
     mask <- apply(mask, 2, sum) == 1
     const_value <- fixed[mask]
-    if (!is.na(const_value)) {
+    if (length(const_value) == 0) {
+        orders$include_constant <- FALSE
+    } else if (!is.na(const_value)) {
       orders$include_constant <- FALSE
     }
   }
@@ -387,12 +373,27 @@ fit.model <- function(serie, orders, xregs=NULL, fixed=NULL, show_info=F) {
         Arima(serie, xreg=xregs, order=orders$regular, seasonal=orders$seasonal, 
             fixed=fixed, include.constant = orders$include_constant)),
       silent=T)
-    if (class(ajuste) != 'try-error' && !any(is.na(sqrt(diag(ajuste$var.coef))))) {
+    if (is_valid(ajuste)) {
       return(ajuste)
     }
   }
   if (show_info) { warning('No se ha podido optimizar un modelo\n') }
   return(NA)
+}
+
+
+is_valid <- function(ajuste) {
+    
+    if (length(ajuste) == 1 && class(ajuste) == 'try-error') {
+        return(FALSE)
+    }
+    else if (all(is.na(ajuste))) {
+        return(FALSE)
+    }
+    else if (suppressWarnings(any(is.na(sqrt(diag(ajuste$var.coef)))))) {
+        return(FALSE)
+    }
+    return(TRUE)
 }
 
 

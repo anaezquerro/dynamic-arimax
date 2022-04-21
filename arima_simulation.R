@@ -1,8 +1,3 @@
-library(fpp2)
-library(tseries)
-library(TSA)
-library(seastests)
-library(polynom)
 
 
 generate.ar.coef <- function(order) {
