@@ -195,7 +195,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         serie <- diff(serie)
         xregs <- as.data.frame(lapply(xregs, diff))
         return(
-            auto.fit.arima.regression(serie, xregs, seasonal, ic, alpha, stationary_method, 
+            auto.fit.arima.regression(serie, xregs, ic, alpha, stationary_method, 
                                       show_info, ndiff+1)
         )
     }
@@ -205,7 +205,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     
     # En el caso de que tampoco haya un ARIMA válido sin regresoras
     if (!is_valid(global_fit)) {
-        stop('Ningún modelo es válido')
+        warning('Ningún modelo es válido')
     } 
     
     # En caso de que sí lo haya, se devuelve éste

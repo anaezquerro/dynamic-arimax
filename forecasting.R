@@ -15,7 +15,7 @@ forecast_model <- function(ajuste, h, mode=c('bootstrap', 'norm'), levels=c(80, 
          if (!bootst && !is_norm(xreg_ajuste)) {
              bootst <- TRUE
          }
-         xreg_pred <- forecast(xreg_ajuste, bootstrap=bootst, h=h, level=levels, xreg=NULL)
+         xreg_pred <- forecast::forecast(xreg_ajuste, bootstrap=bootst, h=h, level=levels)
          xregs_pred[, j] <- xreg_pred$mean
     }
     colnames(xregs_pred) <- colnames(ajuste$xreg)
@@ -37,5 +37,28 @@ is_norm <- function(ajuste, alpha=0.05) {
     return(TRUE)
 } 
 
-forecast_model(ajuste, h=10, mode='bootstrap')
 
+plot_forecast <- function(preds) {
+    colors <- c('rgba(253,205,172,0.6)', 'rgba(203,213,232,0.6)', '
+                rgba(244,202,228,0.6)', 'rgba(230,245,201,0.6)', 'rgba(255,242,174,0.6)', 
+                'rgba(241,226,204,0.6)', 'rgba(204,204,204,0.6)')
+    
+    fig <- plot_ly(type='scatter', mode='lines') %>%
+        add_trace(x=time(preds$x), y=preds$x, line=list(color='grey'),
+                  name='serie temporal', showlegend=T)
+    
+    for (i in rev(1:length(preds$level))) {
+        fig <- fig %>% 
+            add_trace(x=time(preds$upper[, i]), y=preds$upper[, i],
+                      line=list(color=colors[i]), name=paste0('IC ', preds$level[i], ' % conf.')) %>%
+            add_trace(x=time(preds$lower[, i]), y=preds$lower[, i], 
+                      line=list(color=colors[i]), name=paste0('IC ', preds$level[i], ' % conf.'),
+                      fill='tonexty', fillcolor=colors[i], showlegend=F)
+        
+    }
+    fig <- fig %>% add_trace(x=time(preds$mean), y=preds$mean, line=list(color='grey'),
+                     name='predicciones puntuales', showlegend=T)
+    
+    return(fig)
+}
+    

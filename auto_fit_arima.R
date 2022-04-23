@@ -374,7 +374,10 @@ fit.model <- function(serie, orders, xregs=NULL, fixed=NULL, show_info=F) {
             fixed=fixed, include.constant = orders$include_constant)),
       silent=T)
     if (is_valid(ajuste)) {
-      return(ajuste)
+        if (is.null(xregs)) {
+            ajuste$call$xreg <- NULL
+        }
+        return(ajuste)
     }
   }
   if (show_info) { warning('No se ha podido optimizar un modelo\n') }

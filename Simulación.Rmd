@@ -3,7 +3,7 @@ title: "Simulación"
 author: "Ana Xiangning Pereira Ezquerro"
 date:  "Versión `r format(Sys.time(), '%d %B, %Y')`"
 output:
-  pdf_document:
+  bookdown::pdf_document2:
     number_sections: yes
     latex_engine: lualatex
     fig_caption: yes
@@ -30,6 +30,7 @@ classoption: a4paper
 documentclass: article
 header-includes:
 - \usepackage{sfmath}
+- \usepackage{csquotes}
 - \renewcommand*\familydefault{\sfdefault}
 - \renewcommand{\baselinestretch}{1.2}
 - \setlength{\parskip}{1em}
@@ -46,7 +47,7 @@ lang: es
 ```{r, echo=F, warning=F, message=F}
 knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
                       fig.height = 8, message=F, warning = F,
-                      comment='##')
+                      comment='')
 eval(parse("arima_simulation.R", encoding="UTF-8"))
 eval(parse("auto_fit_arima.R", encoding="UTF-8"))
 eval(parse("automatic_selection.R", encoding="UTF-8"))
@@ -62,8 +63,9 @@ library(prettydoc)
 library(stringi)
 library(stringr)
 library(polynom)
+library(forecast)
 
-server <- orca_serve()
+dir.create(file.path('figures'), showWarnings = FALSE)
 
 # Función para mostrar y guardar las gráficas de plotly
 display <- function(fig, name, width=800, height=400) {
@@ -73,7 +75,7 @@ display <- function(fig, name, width=800, height=400) {
   }
   if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "latex") {
     figpath <- paste0('figures/', name, ".pdf")
-    server$export(fig, figpath, width=width, height=height)
+    save_image(fig, figpath, width=width, height=height)
     return(knitr::include_graphics(figpath))
   }
   if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "html") {
@@ -98,7 +100,7 @@ En esta sección veremos cómo se comporta la función de selección automática
 
 donde $\eta_t \sim$ ARMA(p,q) (equivalentemente, un ARIMA donde $d=0$).
 
-## Modelo donde $r_i=0$ para $i=1,...,p$ (#ejemplo1)
+## Modelo donde $r_i=0$ para $i=1,...,p$ {#ejemplo1}
 
 Supongamos un modelo de regresión dinámica de tres variables regresoras donde todos los retardos son igual a cero ($r_i=0, \forall i\in[1, p]$). En concreto, nuestro modelo tendrá la forma:
 
@@ -143,9 +145,16 @@ regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
 ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T)
 ```
 
+Finalmente realizamos las predicciones puntuales:
+
+```{r}
+preds <- forecast_model(ajuste, h=10, mode='bootstrap', levels=c(70, 80, 90))
+display(plot_forecast(preds), name='ejemplo1')
+```
 
 
-## Modelo donde $r_i\leq 0$ para $i=1,...,p$ (#ejemplo2)
+
+## Modelo donde $r_i\leq 0$ para $i=1,...,p$ {#ejemplo2}
 
 Supongamos un modelo de regresión dinámica parecido al del [primer ejemplo](#ejemplo1), pero donde los retardos sean menores o iguales a 0 (que haya "variedad" en los retardos).
 
@@ -210,17 +219,19 @@ load(file='simulaciones/X5 ~ ARIMA(0,1,2).RData')
 load(file='simulaciones/X6 ~ ARIMA(2,1,1).RData')
 load('simulaciones/residuals ~ ARIMA(1, 2, 2).RData')
 beta0 <- 0.8; beta1 <- -1.3; beta2 <- 7.12; beta3 <- 12.3
-Y <- beta0 + beta1 * X1$X + beta2 * X2$X + beta3 * X3$X + 0.1*residuals$X
+Y <- beta0 + beta1 * X1$X + beta2 * X2$X + beta3 * X3$X + 2.1*residuals$X
 ```
 
 
 Ajustamos el modelo con las variables originales (no diferenciamos ninguna):
+
 ```{r}
-regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X) auto.fit.arima.regression(Y, regresoras, seasonal=F, show_info=T) 
+regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
+auto.fit.arima.regression(Y, regresoras, show_info=T) 
 ```
 
 
-- Podemos observar cómo la función
+Podemos observar cómo la función ha realizado una diferenciación regular a todas las series (respusta y regresoras). El resultado final es que las variables $X^{(1)}$ y $X^{(2)}$ intervienen en la variable respuesta, y que los residuos son un ARIMA(2, 0, 0). Obsérvese que los órdenes de los residuos son muy distintos a los que se han usado para generarlos. Etso se debe a las diferenciaciones regulares que se le ha aplicado a todo el conjunto de datos. 
 
 
 ## Modelo con retardos $r<0$
@@ -228,12 +239,14 @@ regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X) a
 
 ```{r}
 # Creación del modelo con los nuevos residuos
-beta0 <- 0.8; beta1 <- -1.8; beta2 <- 7.12; beta3 <- 12.3
+beta0 <- 0.8; beta1 <- 6.8; beta2 <- 1.12; beta3 <- 12.3
 r1 <- -2; r3 <- -1
-Y <- beta0 + beta1 * lag(X1$X, r1) + beta2 * X2$X + beta3 * lag(X3$X, r3) + 1.5*residuals$X
+Y <- beta0 + beta1 * lag(X1$X, r1) + beta2 * X2$X + 
+    beta3 * lag(X3$X, r3) + 1.5*residuals$X
 
 regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-auto.fit.arima.regression(Y, regresoras, show_info=T, stationary_method='adf.test')
+auto.fit.arima.regression(Y, regresoras, show_info=T, 
+                          stationary_method='adf.test')
 ```
 
 
@@ -266,16 +279,19 @@ Y <- beta0 + beta1 * lag(X1$X, r1) + beta2 * lag(X2$X, r2) + residuals$X
 Ajustamos un modelo usando como método para chequear estacionariedad la función `auto.arima`:
 ```{r}
 regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-regresoras <- as.data.frame(lapply(regresoras, window, start=start(Y)[1], end=end(Y)[1]))
-auto.fit.arima.regression(Y, regresoras, seasonal=F, show_info=T, stationary_method='auto.arima')
+regresoras <- as.data.frame(lapply(regresoras, window, 
+                                   start=start(Y)[1], end=end(Y)[1]))
+auto.fit.arima.regression(Y, regresoras, show_info=T, 
+                          stationary_method='auto.arima')
 ```
 
 Ajustamos un modelo usando como método para chequear estacionariedad el `adf.test`:
 
 ```{r}
 regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-regresoras <- as.data.frame(lapply(regresoras, window, start=start(Y)[1], end=end(Y)[1]))
-ajuste <- auto.fit.arima.regression(Y, regresoras, seasonal=F, show_info=T,
+regresoras <- as.data.frame(lapply(regresoras, window, 
+                                   start=start(Y)[1], end=end(Y)[1]))
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T,
                                     stationary_method='adf.test')
 ```
 
@@ -301,12 +317,14 @@ load(file='simulaciones/X6 ~ ARIMA(2,1,1).RData')        # X6
 Si la función `auto.fit.arima` y observamos los *outputs*, vemos que siguen el proceso ARIMA anotado:
 
 ```{r}
-auto.fit.arima(X1$X, seasonal=F, show_info=F)
-auto.fit.arima(X2$X, seasonal=F, show_info=F)
-auto.fit.arima(X3$X, seasonal=F, show_info=F)
-auto.fit.arima(residuals$X, seasonal=F, show_info=F)
-auto.fit.arima(X4$X, seasonal=F, show_info=F)
-auto.fit.arima(X5$X, seasonal=F, show_info=F)
-auto.fit.arima(X6$X, seasonal=F, show_info=F)
+auto.fit.arima(X1$X, show_info=F)
+auto.fit.arima(X2$X, show_info=F)
+auto.fit.arima(X3$X, show_info=F)
+auto.fit.arima(residuals$X, show_info=F)
+auto.fit.arima(X4$X, show_info=F)
+auto.fit.arima(X5$X, show_info=F)
+auto.fit.arima(X6$X, show_info=F)
 ```
+
+Podemos hacer la misma comprobación con las series del [ejemplo 2](#ejemplo2)
 
