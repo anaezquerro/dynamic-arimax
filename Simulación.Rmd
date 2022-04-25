@@ -35,6 +35,7 @@ header-includes:
 - \renewcommand{\baselinestretch}{1.2}
 - \setlength{\parskip}{1em}
 - \input{confi.tex}
+- \renewcommand*\contentsname{Tabla de Contenidos}
 always_allow_html: yes
 bibliography: references.bib
 biblio-style: bwl-FU
@@ -84,7 +85,7 @@ display <- function(fig, name, width=800, height=400) {
 }
 ```
 
-\vspace{3em}
+\vspace{2em}
 
 En este documento se exponen múltiples simulaciones de la selección automática de variables con sus respectivos retardos usando una nueva propuesta. Se mostrarán ejemplos donde la selección automática trabaja sobre un conjunto de variables de las cuales sólo algunas inciden en la variable respuesta y con un retardo concreto (aunque siempre menor o igual a 0). A lo largo de las siguientes secciones se irán complicando escenarios con al finalidad de analizar cómo se comporta la nueva propuesta ante datos simulados e inferir a partir de ellos cómo se comportará en escenarios reales.
 
@@ -148,9 +149,10 @@ ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T)
 Finalmente realizamos las predicciones puntuales:
 
 ```{r}
-preds <- forecast_model(ajuste, h=10, mode='bootstrap', levels=c(70, 80, 90))
-display(plot_forecast(preds), name='ejemplo1')
+preds <- forecast_model(ajuste, h=10, mode='bootstrap', level=c(70, 80, 90))
+display(plot_forecast(preds, rang=c(450, 510)), name='ejemplo1')
 ```
+
 
 
 
@@ -181,6 +183,13 @@ regresoras <- as.data.frame(
 )
 ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T,  
                                     stationary_method='adf.test')
+
+```
+
+```{r}
+# Podemos mostrar las predicciones puntuales
+preds <- forecast_model(ajuste, h=10, mode='bootstrap', level=c(70, 80, 90))
+display(plot_forecast(preds, rang=c(450, 510)), name='ejemplo2')
 ```
 
 
@@ -227,11 +236,17 @@ Ajustamos el modelo con las variables originales (no diferenciamos ninguna):
 
 ```{r}
 regresoras <- data.frame(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-auto.fit.arima.regression(Y, regresoras, show_info=T) 
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T) 
 ```
 
 
-Podemos observar cómo la función ha realizado una diferenciación regular a todas las series (respusta y regresoras). El resultado final es que las variables $X^{(1)}$ y $X^{(2)}$ intervienen en la variable respuesta, y que los residuos son un ARIMA(2, 0, 0). Obsérvese que los órdenes de los residuos son muy distintos a los que se han usado para generarlos. Etso se debe a las diferenciaciones regulares que se le ha aplicado a todo el conjunto de datos. 
+Podemos observar cómo la función ha realizado una diferenciación regular a todas las series (respuesta y regresoras). El resultado final es que las variables $X^{(1)}$ y $X^{(2)}$ intervienen en la variable respuesta, y que los residuos son un ARIMA(2, 0, 0). Obsérvese que los órdenes de los residuos son muy distintos a los que se han usado para generarlos. Etso se debe a las diferenciaciones regulares que se le ha aplicado a todo el conjunto de datos. 
+
+```{r}
+preds <- forecast_model(ajuste, h=10, mode='bootstrap', levels=c(70, 80, 90))  
+display(plot_forecast(preds, rang=c(450, 510)), name='ejemplo3')
+```
+
 
 
 ## Modelo con retardos $r<0$

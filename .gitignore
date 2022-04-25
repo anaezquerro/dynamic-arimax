@@ -39,5 +39,7 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# folders`
-/simulaciones/
+# folders
+simulaciones/
+data/
+figures/

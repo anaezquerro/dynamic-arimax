@@ -21,7 +21,7 @@ plot_serie <- function(serie, title='Gráfico secuencial', alpha=0.05) {
     layout(xaxis=list(zeroline=F), yaxis=list(zeroline=F), 
            plot_bgcolor='#e5ecf6', separators='.',
            annotations=list(
-             list(x=0.5, y=1.1, text=title, showarrow=F, 
+             list(x=0.5, y=1.1, text=title, showarrow=F, margin=list(t=50),
                   xref='paper', yref='paper', font=list(size=16))
            )
     )
@@ -48,7 +48,7 @@ plot_serie <- function(serie, title='Gráfico secuencial', alpha=0.05) {
   
   # Gráfico de correlaciones parciales
   pacfs <- pacf(serie, plot=F)
-  pstat <-qnorm(1-alpha/2)/sqrt(pacfs$n.used)
+  pstat <- qnorm(1-alpha/2)/sqrt(pacfs$n.used)
   psig_lines <- data.frame(x=c(0, 0), xend=rep(max(pacfs$lag), 2),
                            y=c(pstat, -pstat), yend=c(pstat, -pstat))
   
@@ -69,7 +69,7 @@ plot_serie <- function(serie, title='Gráfico secuencial', alpha=0.05) {
   subfig <- subplot(acf_plot, pacf_plot, margin=0.07)
   
   fig <- subplot(seq_plot, subfig, nrows=2, margin=0.07) %>%
-    layout(showlegend=FALSE, showlegend2=FALSE, margin=list(t=50))
+    layout(showlegend=FALSE, showlegend2=FALSE)
   
   return(fig)
 }
@@ -77,7 +77,7 @@ plot_serie <- function(serie, title='Gráfico secuencial', alpha=0.05) {
 
 
 
-plot_residuals <- function(ajuste, title='Residuals sequential plot', alpha=0.05) {
+plot_residuals <- function(ajuste, title='Gráfico secuencia de los residuos', alpha=0.05) {
   
   # Gráfico distribución de los residuos
   bounds <- sqrt(ajuste$sigma2)*3
@@ -90,20 +90,21 @@ plot_residuals <- function(ajuste, title='Residuals sequential plot', alpha=0.05
               color='orange')
   
   hist_residuals <- ggplotly(hist_residuals) %>%
-    layout(xaxis=list(title='residuals', zeroline=F), 
-           yaxis=list(title='density', zeroline=F),  plot_bgcolor='#e5ecf6',
+    layout(xaxis=list(title='residuos', zeroline=F), 
+           yaxis=list(title='densidad', zeroline=F),  plot_bgcolor='#e5ecf6',
            annotations=list(
-             list(x=0, y=1.1, text='Normality test', showarrow=F, yref='paper')
+             list(x=0, y=1.1, text='Test de normalidad', showarrow=F, yref='paper')
            )
     )
   
   # Gráfico secuencial de los residuos
   seq_plot <-  plot_ly(type='scatter', mode='lines') %>%
     add_trace(x=time(ajuste$residuals), y=ajuste$residuals, 
-              line=list(color='grey'), trace=title, showlegend=F) %>%
+              line=list(color='grey'), name=title, showlegend=F) %>%
     layout(xaxis=list(zeroline=F), yaxis=list(zeroline=F), plot_bgcolor='#e5ecf6',
            annotations=list(
-             list(x=0.5, y=1.15, text=title, showarrow=F, xref='paper', yref='paper')
+             list(x=0.5, y=1.1, text=title, showarrow=F, xref='paper', yref='paper',
+                  margin=list(t=50))
            )
     )
   
@@ -118,15 +119,15 @@ plot_residuals <- function(ajuste, title='Residuals sequential plot', alpha=0.05
              marker=list(color='grey')) %>%
     add_segments(data=sig_lines, x=~x, xend=~xend, y=~y, yend=~yend,
                  line=list(color='blue', dash='dot'), showlegend=F,
-                 trace='acf')  %>% layout(plot_bgcolor='#e5ecf6') %>%
+                 name='acf')  %>% layout(plot_bgcolor='#e5ecf6') %>%
     layout(annotations=list(
-      list(x=max(acfs$lag)/2, y=1.1, text='Autocorrelations', showarrow=F, yref='paper')
+      list(x=max(acfs$lag)/2, y=1.1, text='Autocorrelaciones', showarrow=F, yref='paper')
     ))
   
-  subfig <- subplot(acf_plot, hist_residuals, margin=0.07)
+  subfig <- subplot(acf_plot, hist_residuals, margin=0.0)
   
   fig <- subplot(seq_plot, subfig, nrows=2, margin=0.07) %>%
-    layout(showlegend=FALSE, showlegend2=FALSE, margin=list(t=50))
+    layout(showlegend=FALSE, showlegend2=FALSE)
   
   return(fig)
   
@@ -142,7 +143,7 @@ default_colors <- c(
     '#e377c2',      # or rgb(227, 119, 194)
     '#7f7f7f',      # or rgb(127, 127, 127)
     '#bcbd22',      # or rgb(188, 189, 34)
-    '#17becf'      # or rgb(23, 190, 207)
+    '#17becf'       # or rgb(23, 190, 207)
 )
 
 pplot <- function(x, y=NULL, title="", color=default_colors[1]) {

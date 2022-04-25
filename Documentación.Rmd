@@ -47,16 +47,29 @@ lang: es
 knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
                       fig.height = 8, message=F, warning = F,
                       comment='')
-eval(parse("funciones.R", encoding="UTF-8"))
+eval(parse("plot_tools.R", encoding="UTF-8"))
+eval(parse("arima_simulation.R", encoding="UTF-8"))
+eval(parse("auto_fit_arima.R", encoding="UTF-8"))
+eval(parse("automatic_selection.R", encoding="UTF-8"))
+eval(parse("forecasting.R", encoding="UTF-8"))
+
+# Librerías de series temporales
 library(fpp2)
 library(tseries)
 library(TSA)
-library(latex2exp)
-library(plotly)
 library(seastests)
-library(prettydoc)
+library(forecast)
 
-server <- orca_serve()
+# Librerías para los gráficos
+library(plotly)
+library(forecast)
+
+# Auxiliares
+library(prettydoc)
+library(stringi)
+library(stringr)
+library(polynom)
+
 
 # Función para mostrar y guardar las gráficas de plotly
 display <- function(fig, name, width=800, height=400) {
@@ -66,7 +79,7 @@ display <- function(fig, name, width=800, height=400) {
   }
   if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "latex") {
     figpath <- paste0('figures/', name, ".pdf")
-    server$export(fig, figpath, width=width, height=height)
+    save_image(fig, figpath, width=width, height=height)
     return(knitr::include_graphics(figpath))
   }
   if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "html") {
@@ -78,7 +91,7 @@ display <- function(fig, name, width=800, height=400) {
 
 \newpage
 
-# Función de auto-ajuste de modelos ARIMAX (`auto.fit.arima`)
+# Función de auto-ajuste de modelos ARIMAX (`auto.fit.arima` en `auto_fit_arima.R`)
 
 
 **Descripción**: Obtiene el ajuste de un modelo válido para una serie temporal y, opcionalmente, una o varias variables regresoras. En el ajuste obtenido todos los parámetros son estadísticamente significativos y se verifica que se cumplen las hipótesis de independencia y media nula sobre sus residuos. Este ajuste es escogido por un criterio de información que se introduce como argumento.
@@ -98,18 +111,17 @@ auto.fit.arima(serie, xregs = NULL, seasonal = TRUE, ic = c("aicc", "aic", "bic"
 
 * `serie` [`ts`]: Serie temporal sobre la que se quiere obtener un ajuste válido de un modelo ARIMAX.
 * `xregs` [`ts`]: Se pueden introducir series de tiempo que actuarán como variables regresoras sobre `serie`. Por defecto, `xregs=NULL`, i.e. no hay variables regresoras.
-* `seasonal` [`boolean`]: Indica si la búsqueda de modelos debe incluir o no modelos con componente estacional. Por defecto, `TRUE`.
 * `ic` [`character`]: Criterio de información para escoger modelos. 
     + `"aicc"`: Criterio de Información de Akaike Corregido (por defecto).
     + `"aic"`: Criterio de Información de Akaike.
     + `"bic"`: Criterio de Información Bayesiano.
-* `d` [`numeric`]: Orden de diferenciación regular de `serie` sobre el que se limita la búsqueda de modelos. Si no se introduce ningún valor, no se aplica ninguna limitación.
-* `D` [`numeric`]: Orden de de diferenciación estacional de `serie` sobre el que se limita la búsqueda de modelos. Si no se introduce ningún valor, no se aplica ninguna limitación.
+* `d` [`numeric`]: Orden de diferenciación regular de `serie` sobre el que se limita la búsqueda de modelos. Si no se introduce ningún valor el valor máximo de la búsqueda es `d=4`.
+* `D` [`numeric`]: Orden de de diferenciación estacional de `serie` sobre el que se limita la búsqueda de modelos. Si no se introduce ningún valor el valor máximo de la úsqueda es `D=3`.
 * `alpha` [`numeric`]: Valor entre 0 y 1 que indica el nivel de significación de los tests para chequear:
     + La significación de los parámetros de los ajustes.
     + La validez del modelo a partir del test de independencia de residuos y el test de media nula de los residuos.
-* `show_info` [`boolean`]: Indica si se muestra la información de la búsqueda del mejor ajuste o no.
-* `plot_results` [`boolean`]: Indica si se deben devolver los gráficos de la serie temporal y los residuos del modelo obtenido. Por defecto, `FALSE`.
+* `show_info` [`boolean`]: Indica si se muestra la información de la búsqueda del mejor ajuste o no. Por defecto `TRUE`.
+* `plot_results` [`boolean`]: Indica si se deben devolver los gráficos de la serie temporal y los residuos del modelo obtenido. Por defecto `FALSE`.
 
 **Ejemplo de uso**: Evolución de la gripe en Cataluña.
 
@@ -126,8 +138,8 @@ display(result_gripe$fig_residuals, "residuals gripe", width=1000, height=800)
 [Nivel mensual de dióxido de carbono (Co2) medido en el Observatorio de Mauna Loa (Hawaii)](ftp://ftp.cmdl.noaa.gov/ccg/co2/trends/co2_mm_mlo.txt). La serie comienza en Marzo de 1958.
 
 ```{r}
-co2 <- ts(scan("Series P2/co2MaunaLoa.dat"), start=c(1958, 3), frequency=12)
-result_co2 <- auto.fit.arima(co2, seasonal=TRUE, ic="aicc", plot_result=TRUE)
+co2 <- ts(scan('data/co2MaunaLoa.dat'), start=c(1958, 3), frequency=12)
+result_co2 <- auto.fit.arima(co2, ic="aicc", plot_result=TRUE)
 display(result_co2$fig_serie, "serie co2", width=1000, height=800)
 display(result_co2$fig_residuals, "residuals co2", width=1000, height=800)
 ```
@@ -136,14 +148,14 @@ display(result_co2$fig_residuals, "residuals co2", width=1000, height=800)
 
 **Consideraciones**:
 
-* Para chequear la independencia de residuos se utiliza el contraste de Ljung-Box (`Box.test`). El número de retardos se escoge en base a la estacionalidad de la serie (si la hay) y la longitud de la misma (función `get.ljungbox.lag`).
+* Para chequear la independencia de residuos se utiliza el contraste de Ljung-Box (`Box.test`). El número de retardos se escoge en base a la estacionalidad de la serie (si la hay) y la longitud de la misma (función `ljungbox_lag`).
 * Para chequear la media nula de los residuos se utiliza el `t.test`. 
 * Para chequear la normalidad de los residuos se utilizar el test de Jarque-Bera (`jarque.bera.test`) y el de Shapiro-Wilks (`shapiro.test`).
 * Los modelos considerados tendrán siempre un orden de diferenciación regular igual o inferior a 3 ($d\leq 3$) y un orden de diferenciación estacional menor o igual a 2 ($D\leq 2$).
 
 \newpage
 
-# Función de selección automática de múltiples variables y retardos en modelos ARIMAX (`auto.fit.arima.regression`)
+# Función de selección automática de múltiples variables y retardos en modelos ARIMAX (`auto.fit.arima.regression` en `automatic_selection.R`)
 
 
 **Descripción**: Método de selección las variables regresoras y sus respectivos retardos (óptimos) para una serie de tiempo en base al método propuesto por @cryer2008time.
@@ -151,30 +163,24 @@ display(result_co2$fig_residuals, "residuals co2", width=1000, height=800)
 **Devuelve**: Ajuste de un modelo válido de todas las variables regresoras que se han seleccionado para modelar la variable respuesta. 
 
 ```{r, eval=F}
-auto.fit.arima.regression(serie, xregs, seasonal = TRUE, ic = c("aicc", "aic", "bic"), 
-                          d = NA, D = NA, alpha = 0.05, show_info = TRUE)
+auto.fit.arima.regression(serie, xregs, ic = c("aicc", "aic", "bic"), 
+                         alpha = 0.05, stationary_method='auto.arima', 
+                         show_info = TRUE, ndiff=0)
 ```
+
 
 **Argumentos**: 
 
 * `serie` [`ts`]: Serie temporal que funciona como variable respuesta en el modelo de regresión dinámico sobre el que se realiza la selección de variables regresoras.
-* `xregs` [`data.frame`]: Dataframe con las series temporales que actuarán como variables regresoras de `serie`.
-* `show_info` [`boolean`]: Indica si se muestra la información de la selección de variables o no.
-
-
-Los siguientes parámetros se pasan de forma directa a la función `auto.fit.arima` cada vez que se necesita un ajuste válido cuando se añade una variable regresora entra en el modelo (no son configurables para cada variable regresora).
-
-
-* `seasonal` [`boolean`]: Indica si la búsqueda de modelos debe incluir o no modelos con componente estacional. Por defecto, `TRUE`
-* `ic` [`character`]: Criterio de información para escoger modelos. 
-    + `"aicc"`: Criterio de Información de Akaike Corregido (por defecto).
-    + `"aic"`: Criterio de Información de Akaike.
-    + `"bic"`: Criterio de Información Bayesiano.
-* `d` [`numeric`]: Orden de diferenciación regular de `serie` sobre el que se limita la búsqueda de modelos. Si no se introduce ningún valor, no se aplica ninguna limitación.
-* `D` [`numeric`]: Orden de de diferenciación estacional de `serie` sobre el que se limita la búsqueda de modelos. Si no se introduce ningún valor, no se aplica ninguna limitación.
+* `xregs` [`data.frame`]: Dataframe con las series temporales que actuarán como variables regresoras de `serie`. Es importante que los nombres de las columnas tengan un significado de cara a identificar las variables regresoras.
 * `alpha` [`numeric`]: Valor entre 0 y 1 que indica el nivel de significación de los tests para chequear:
     + La significación de los parámetros de los ajustes.
-    + La validez del modelo a partir del test de independencia de residuos y el test de media nula de los residuos.
+    La validez del modelo a partir del test de independencia de residuos y el test de media nula de residuos.
+    + La selección de retardos óptimos.
+    + La comprobación de tendencia de las series.
+* `stationary_method` [`character`]: Método utilizado para chequear la estacionariedad de una serie temporal. Si `stationary_method = 'auto.arima'`, se utiliza la función `forecast::auto.arima` para ajustar un modelo ARIMA(p,d,q) y chequear si $d > 0$ (si se cumple esta condición se asume que la serie no es estacionaria). Si `stationary_method = 'adf.test'` se usa el test Dickey-Fuller (`tseries::adf.test`) para chequear la estacionariedad de una serie temporal.
+* `show_info` [`boolean`]: Indica si se muestra la información de la selección de variables o no.
+* `ndiff` [`numeric`]: Parámetro interno del programa (no utilizar!) para diferenciar todas las variables cuando no se pueda ajustar un modelo válido y mantener un registro del número de diferenciaciones que se están realizando.
 
 *Nota*: No se mostrará la información del ajuste de cada modelo para cada variable regresora.
 
@@ -185,7 +191,7 @@ Los siguientes parámetros se pasan de forma directa a la función `auto.fit.ari
 load("data/patatas.dat")
 Y <- patatas[,1]   
 X <- patatas[,2]
-ajuste <- auto.fit.arima.regression(Y, data.frame(X))
+ajuste_patatas <- auto.fit.arima.regression(Y, data.frame(X))
 ```
 
 **Ejemplo de uso**: Modelización de la serie de tiempo de muertes en España debido al COVID19, considerando como posibles variables regresoras:
@@ -196,9 +202,9 @@ ajuste <- auto.fit.arima.regression(Y, data.frame(X))
 
 
 ```{r}
-confirmed <- read.csv("covid global/confirmed_bycountry.csv")
-deaths <- read.csv("covid global/deaths_bycountry.csv")
-recovered <- read.csv("covid global/recovered_bycountry.csv")
+confirmed <- read.csv("data/covid-global-confirmed-bycountry.csv")
+deaths <- read.csv("data/covid-global-deaths-bycountry.csv")
+recovered <- read.csv("data/covid-global-recovered-bycountry.csv")
 
 confirmed_spain <- ts(confirmed$Spain, frequency=7)
 deaths_spain <- ts(deaths$Spain, frequency=7)
@@ -215,11 +221,12 @@ regresoras <- data.frame(confirmed_spain, recovered_spain)
 ajuste <- auto.fit.arima.regression(deaths_spain, regresoras)
 ```
 
+
 \newpage
 
 # Funciones auxiliares
 
-## Ajuste de los coeficientes de un modelo (`fit.coefficients()`)
+## Ajuste de los coeficientes de un modelo (`fit.coefficients()` de `auto_fit_arima.R`)
 
 
 **Descripción**: Elimina de forma incremental los coeficientes no significativos en un modelo.
@@ -236,13 +243,12 @@ fit.coefficients(ajuste, orders, alpha=0.05, show_info=T)
 * `orders` [`list`]: Objeto de tipo lista donde se especifica información sobre los órdenes regulares y estacionales del modelo. El formato es el siguiente:
   + `orders$regular = c(p, d, q)` [`numeric`]: Especifica los órdenes regulares.
   + `orders$seasonal = c(P, D, Q` [`numeric`]: Especifica los órdenes estacionales.
-  + `orders$include_mean` [`boolean`]: Especifica si se debe incluir la media en el ajuste ($d=0$ y $D=0$).
   + `orders$include_constant` [`boolean`]: Especifica si se debe incluir constante en el ajuste.
 * `alpha` [`numeric`]: Valor entre 0 y 1 que especifica el nivel de significación para retirar parámetros del modelo. Por defecto es 0.05%.
 * `show_info` [`boolean`]: Indica si se debe mostrar información sobre los parámetros que se van retirando del ajuste o no. Por defecto, va mostrando esta información en consola.
 
 
-## Ajuste de un ARIMA vía múltiples optimizadores (`fit.model()`)
+## Ajuste de un ARIMA vía múltiples optimizadores (`fit.model()` de `auto_fit_arima.R`)
 
 **Descripción**: Ajuste de un modelo ARIMA dados sus órdenes sobre una serie temporal, manejando posbles errores de optimización y probando con otros métodos en caso de que el que viene dado por defecto provoque errores. Los optimizadores con los que prueba son, en este orden: `BFGS`, `Nelder-Mead`, `CG`, `L-BFGS-B`, `SANN` y `Brent`.
 
@@ -250,7 +256,7 @@ fit.coefficients(ajuste, orders, alpha=0.05, show_info=T)
 **Devuelve**: Modelo ARIMA para los parámetros y serie temporal dada o `NA` en caso de que no haya sido posible ajustar ningún modelo por problemas de optimización.
 
 ```{r, eval=F}
-fit.model(serie, orders, xregs=NULL, lambda=NULL, fixed=NULL)
+fit.model(serie, orders, xregs=NULL, fixed=NULL)
 ```
 
 **Argumentos**:
@@ -261,15 +267,14 @@ fit.model(serie, orders, xregs=NULL, lambda=NULL, fixed=NULL)
   + `orders$seasonal = c(P, D, Q` [`numeric`]: Especifica los órdenes estacionales.
   + `orders$include_mean` [`boolean`]: Especifica si se debe incluir la media en el ajuste ($d=0$ y $D=0$).
 * `xregs` [`ts`]: Matriz de posibles variables regresoras. 
-* `lambda` [`numeric` o `NULL`]: Transformación BoxCox que se puede realizar a la serie. Por defecto no se aplica ninguna (`NULL`). Este parámetro se pasa de forma directa al de la función `Arima()`.
 * `fixed`: Vector de valores fijos para los coeficientes del modelo ARIMA que se quiere ajustar.
 
 
 
-## Selección del retardo óptimo (`select.optimal.lag()`)
+## Selección del retardo óptimo (`select.optimal.lag()` de `automatic_selection.R`)
 
 
-**Descripcion**: Selección del retardo significativo y óptimo de dos series (asumiendo que una funciona como variable explicativa y otra como variable respuesta en un modelo de regresión con componente temporal). Esta selección se realiza siguiendo el procedimiento descrito por @cryer2008time usando las funciones `tseries::adf.test()` para chequear estacionariedad, `seastests::isSeasonal` para chequear presencia de estacionalidad y `TSA::prewhiten()` para aplicar el preblanqueado sobre las dos series.
+**Descripcion**: Selección del retardo significativo y óptimo de dos series (asumiendo que una funciona como variable explicativa y otra como variable respuesta en un modelo de regresión con componente temporal). Esta selección se realiza siguiendo el procedimiento descrito por @cryer2008time usando las funciones `tseries::adf.test()` o `auto.arima` para chequear estacionariedad, `seastests::isSeasonal` para chequear presencia de estacionalidad y `TSA::prewhiten()` para aplicar el preblanqueado sobre las dos series.
 
 **Devuelve**: El retardo óptimo de las dos series o `NA` en caso de que ningún retardo sea significativo.
 
@@ -285,6 +290,41 @@ select.optimal.lag(serie, xreg, alpha=0.05, max_lag=NA)
 * `alpha` [`numeric`]: Valor entre 0 y 1 que indica el nivel de significación para aceptar o no la hipótesis nulas en los contrastes de signficación, estacionariedad y estacionalidad.
 * `max_lag` [`numeric` o `NA`]: Opcionalmente, se puede añadir un valor que limite el valor del retardo óptimo tal que su valor absoluto siempre sea menor que `max_lag`.
 
+
+\newpage
+
+# Predicciones puntuales a horizonte $h$ e intervalos de confianza (`forecasting_model()` de `forecasting.R`)
+
+**Descripción**: A partir del ajuste de un ARIMAX realiza predicciones puntuales a horizonte $h$ de cada variable regresora para introducirlas en las predicciones puntuales de la variable respuesta.
+
+**Devuelve**: Objeto `forecast` con las predcciones puntuales y los intervalos de confianza.
+
+
+```{r, eval=F}
+forecast_model(ajuste, h, mode=c('bootstrap', 'norm'), levels=c(80, 90))
+```
+
+**Arguments**:
+
+* `ajuste` [`Arima`]: Ajuste de un modelo de regresión con series temporales sobre el que se quieren hacer predicciones puntuales e intervalos de confianza.
+* `h` [`numeric`]: Valor horizonte de las predicciones.
+* `mode` [`character`]: Modo de realizar las predicciones: basadas en normalidad sobre los residuos (`norm`) o a través de *bootstrap* (`bootstrap`).
+* `levels` [`vector`]: Vector numérico de los niveles a los que se quieren hacer los intervalos de predicción.
+
+
+**Ejemplo de uso**:
+
+```{r}
+load("data/patatas.dat")
+Y <- ts(patatas[,1])
+X <- ts(patatas[,2])
+ajuste_patatas <- auto.fit.arima.regression(Y, data.frame(X=X))
+ajuste_patatas$xreg <- cbind(X=ts(ajuste_patatas$xreg))
+
+# Calculamos las predicciones puntuales
+preds <- forecast_model(ajuste_patatas, h=10, mode='bootstrap')
+display(plot_forecast(preds), name='preds_patatas')
+```
 
 
 
@@ -361,6 +401,6 @@ Adicionalmente, la función `auto.fit.arima` nos avisa de que los residuso no si
 
 
 
-\newpage
+
 
 

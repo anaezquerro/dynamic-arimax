@@ -21,7 +21,8 @@
 #' ajustar este modelo, se devuelve `NA`.
 #' @export
 #' 
-auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05, show_info=T) {
+auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05, 
+                           show_info=T, plot_result=F) {
     
     if (class(serie) != 'ts') {
         stop('El argumento `serie` debe ser de tipo ts')
@@ -34,7 +35,7 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
     trace <- capture.output({
         aux <- suppressWarnings(
             auto.arima(serie, xreg=xregs, d=d, D=D, seasonal=frequency(serie) > 1, 
-                       ic=ic, max.d=3, stepwise=FALSE, approximation=FALSE, trace = TRUE) 
+                       ic=ic, max.d=4, max.D=3, stepwise=F, approximation=F, trace = T) 
         )
     })
     con    <- textConnection(trace)
@@ -57,7 +58,7 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
         # lo eliminamos del trace recogido y probamos con el siguiente.
         ajuste <- fit.model(serie, xreg=xregs, orders)
         
-        if (all(is.na(ajuste))) {
+        if (!is_valid(ajuste)) {
             models <- models[-c(which.min(models[[ic]])), ]
             next
         }
@@ -69,29 +70,27 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
         }
         
         # Chequeamos si en el modelo hay parámetros que se pueden sacar
-        ajuste <- fit.coefficients(ajuste, orders, alpha=alpha, show_info=show_info)
+        ajuste <- fit.coefficients(ajuste=ajuste, orders=orders, alpha=alpha, show_info=show_info)
         
-        # 2.5. Chequeamos si no ha habido problemas en el ajuste del modelo.
-        if (all(is.na(ajuste)) || any(is.na(ajuste$var.coef))){
-            ajuste <- NA
+        if (!is_valid(ajuste)) {
             models <- models[-c(which.min(models[[ic]])),]
             next
         }
         
-        # 2.6 Si no ha habido problemas de optimización, realiazmos el 
-        # análisis de residuos
+        # Si no ha habido problemas de optimización, realiazmos el análisis de residuos
         H <- ljungbox_lag(ajuste$residuals)
-        ljungbox <- Box.test(ajuste$residuals, lag=H, type='Ljung-Box', fitdf=sum(ajuste$coef!=0))$p.value
-        ttest <- t.test(ajuste$residuals, mu=0)$p.value
-        testJB <- jarque.bera.test(ajuste$residuals[!is.na(ajuste$residuals)])$p.value
-        testSW <- shapiro.test(ajuste$residuals)$p.value
+        ljungbox <- Box.test(ajuste$residuals, lag=H, type='Ljung-Box', 
+                             fitdf=sum(ajuste$coef!=0))$p.value
+        ttest    <- t.test(ajuste$residuals, mu=0)$p.value
+        testJB   <- jarque.bera.test(ajuste$residuals[!is.na(ajuste$residuals)])$p.value
+        testSW   <- shapiro.test(ajuste$residuals)$p.value
         
         if (ljungbox < alpha) {
             models <- models[-c(which.min(models[[ic]])),]  # eliminamos el modelo del historial
             if (show_info) {
                 cat(paste0('Falla la hipótesis de independencia de los residuos: p-valor=', ljungbox, 
                            '\nModelo no válido. Probamos con el siguiente modelo vía criterio ', ic, '\n'))
-                cat('**********************************************************************\n') 
+                cat('----------------------------------------------------------------------\n') 
             }
             next
         }
@@ -100,7 +99,7 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
             if (show_info) {
                 cat(paste0('Falla la hipótesis de media nula de los residuos: p-valor=', ttest,
                            '\nModelo no válido. Probamos con el siguiente modelo vía criterio ', ic, '\n'))
-                cat('**********************************************************************\n') 
+                cat('----------------------------------------------------------------------\n') 
             }
             next
         }
@@ -117,21 +116,27 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
         break
     }
     
-    # 3. Comprobamos que el ajuste que hemos obtenido es válido
-    if (all(is.na(ajuste)))  {
+    # Comprobamos que el ajuste que hemos obtenido es válido
+    if (!is_valid(ajuste))  {
         if (show_info) {
             warning('No se ha podido encontrar ningún modelo para la serie temporal')
         }
         return(NA)
     }
     
-    # 4. En caso de que si se haya obtenido un modelo válido, se muestra en pantalla 
-    # y se devuelve
+    # En caso de que si se haya obtenido un modelo válido, se muestra en pantalla y se devuelve
     if (show_info) {
         cat('\n----------------------------------------------------------------------\n')
         cat('|                             MODELO FINAL                           |\n')
         cat('----------------------------------------------------------------------\n')
         print(ajuste, row.names=F)
+    }
+    
+    if (plot_result) {
+        fig_serie     <- suppressWarnings(plot_serie(serie, alpha=alpha))
+        fig_residuals <- suppressWarnings(plot_residuals(ajuste, alpha=alpha))
+        result        <- list(ajuste=ajuste, fig_serie=fig_serie, fig_residuals=fig_residuals)
+        return(result)
     }
     return(ajuste)
 }
@@ -359,6 +364,8 @@ update.order <- function(order, fixed, mask) {
 #' @param orders Órdenes del modelo ARIMA.
 #' @param xregs Variables regresoras del modelo.
 #' @param fixed Vector máscara con los coeficientes que se deben fijar a 0.
+#' @param show_info Valor booleano que indica si se deben mostrar o no los 
+#' modelos que se vayan ajustando.
 #'
 #' @returns Ajuste o `NA` en caso de que no sea posible optimizar un modelo.
 #' @export
@@ -385,6 +392,10 @@ fit.model <- function(serie, orders, xregs=NULL, fixed=NULL, show_info=F) {
 }
 
 
+#' Comprobación de que un ajuste ha sido correctamente optimizado
+#' 
+#' @param ajuste Ajuste a comprobar.
+#' @returns `TRUE` si el modelo es válido, `FALSE` en otro caso.
 is_valid <- function(ajuste) {
     
     if (length(ajuste) == 1 && class(ajuste) == 'try-error') {
@@ -394,6 +405,8 @@ is_valid <- function(ajuste) {
         return(FALSE)
     }
     else if (suppressWarnings(any(is.na(sqrt(diag(ajuste$var.coef)))))) {
+        return(FALSE)
+    } else if (suppressWarnings(any(is.na(ajuste$var.coef)))) {
         return(FALSE)
     }
     return(TRUE)

@@ -27,7 +27,9 @@
 #' para chequear la estacionariedad de una serie temporal.
 #' @param show_info Valor booelano que indica si mostrar o no por pantalla los modelos 
 #' que se van ajustando, así como información relacionada con la selección de variables.
-#' @param ndiff
+#' @param ndiff Parámetro interno del programa (no utilizar!) para diferenciar todas las variables 
+#' cuando no se pueda ajustar un modelo válido y mantener un registro del número de diferenciaciones 
+#' que se están realizando.
 #'
 #' @returns Ajuste del modelo ARIMAX con las variables regresoras seleccionadas. Si dicho 
 #' ajuste no existe (o no es posible de optimizar), devuelve el ajuste válido de un 
