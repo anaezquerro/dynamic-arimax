@@ -43,3 +43,4 @@ vignettes/*.pdf
 simulaciones/
 data/
 figures/
+.DS_Store
