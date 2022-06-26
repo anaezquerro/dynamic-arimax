@@ -70,11 +70,6 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     
     # Inicio del bucle para añadir variables regresoras
     for (i in 1:ncol(xregs)) {
-        if (show_info) {
-            cat('----------------------------------------------------------------------\n')
-            cat(paste0('Iteración ', i, ' del algoritmo\n'))
-            cat('----------------------------------------------------------------------\n')
-        }
         
         # Inicialzación de parámetros
         best_xreg <- NA            # nombre de la variable regresora que se añadirá
@@ -82,6 +77,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         added <- FALSE             # indicación de si se ha añadido una regresora más
         
         # Inicialización del bucle anidado para seleccionar la "mejor" regresora
+        
         for (j in 1:ncol(xregs)) {
             
             xreg <- xregs[, j]              # variable que se está evaluando
@@ -111,7 +107,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             
             # Ajuste del modelo de regresión dinámica con la nueva variable regresora
             ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
-                                     ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
+                                     ic=ic, d=NA, D=NA, alpha=alpha, show_info=T)
             
             # Si no se consigue un ajuste válido, se prueba con la siguiente variable
             if (all(is.na(ajuste))) {   
@@ -142,10 +138,9 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         
         # Se anota la variable regresora que se ha añadido al modelo
         if (show_info) {
-            cat('----------------------------------------------------------------------\n')
             cat(paste0('Se ha añadido la variable regresora ', names(xregs)[best_xreg], ' [', ic, '=', best_ic, ']\n'))
-            cat('----------------------------------------------------------------------\n')
             print(global_fit, row.names=F)
+            cat('----------------------------------------------------------------------------\n')
         }
         
         # Se añade al historial del modelo la nueva variable añadida
@@ -175,10 +170,13 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
                 warning(paste0('Se han aplicado ', ndiff, ' diferencias regulares'))
             }
             
-            cat('----------------------------------------------------------------------\n')
-            cat('|            Histórico de variables añadidas al modelo                |\n')
-            cat('----------------------------------------------------------------------\n')
+            cat('----------------------------------------------------------------------------\n')
+            cat(paste0('|           Histórico de variables añadidas al modelo (ndiff=', ndiff, ')            |\n'))
+            cat('----------------------------------------------------------------------------\n')           
             print(model_history, row.names=F)
+            print(global_fit, row.names=F)
+            global_fit$ndiff <- ndiff
+            global_fit$history <- model_history
             return(global_fit)
         }
     }
@@ -190,8 +188,8 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     # a) Diferenciar todas las variables y volver a llamar a la función auto.fit.arima.regression
     # b) Si ndiff=2 no se recomienda diferenciar más y se ajusta un ARIMA sin regresoras
     if (ndiff < 3) {
-        warning(paste0('No se ha podido encontrar un modelo válido\n',
-                       'Se aplica una diferenciación regular (ndiff=', ndiff+1, 
+        cat(paste0('No se ha podido encontrar un modelo válido\n',
+            'Se aplica una diferenciación regular (ndiff=', ndiff+1, 
                        ') y se vuelve a llamar a la función\n'))
         
         serie <- diff(serie)
@@ -208,20 +206,24 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     # En el caso de que tampoco haya un ARIMA válido sin regresoras
     if (!is_valid(global_fit)) {
         warning('Ningún modelo es válido')
+        return(NA)
     } 
     
     # En caso de que sí lo haya, se devuelve éste
     best_ic <- global_fit[[ic]]
     
     if (show_info) {
-        cat('----------------------------------------------------------------------\n')
-        cat(paste0('Modelo (sin variables regresoras cond d=', ndiff, ') [', ic, '=', best_ic, ']\n'))
-        cat('----------------------------------------------------------------------\n')
+        cat('----------------------------------------------------------------------------\n')
+        cat(paste0('Modelo (sin variables regresoras cond ndiff=', ndiff, ') [', ic, '=', best_ic, ']\n'))
+        cat('----------------------------------------------------------------------------\n')
         print(global_fit, row.names=F)
-        cat('----------------------------------------------------------------------\n')
+        cat('----------------------------------------------------------------------------\n')
     }
+    global_fit$ndiff <- ndiff
     return(global_fit)
 }
+
+
 
 
 #' Función auxiliar para la construcción de una matriz de series temporales en base al 

@@ -70,7 +70,7 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
         }
         
         # Chequeamos si en el modelo hay parámetros que se pueden sacar
-        ajuste <- fit.coefficients(ajuste=ajuste, orders=orders, alpha=alpha, show_info=show_info)
+        ajuste <- fit.coefficients(ajuste=ajuste, alpha=alpha, show_info=show_info)
         
         if (!is_valid(ajuste)) {
             models <- models[-c(which.min(models[[ic]])),]
@@ -169,6 +169,51 @@ get_orders <- function(ajuste) {
 }
 
 
+update_orders <- function(ajuste, fixed) {
+    
+    if (is.null(fixed)) {return(list(orders=get_orders(ajuste), fixed=NULL))}
+    if (all(is.na(fixed))) {return(list(orders=get_orders(ajuste), fixed=fixed))}
+    
+    remov_coefs <- names(ajuste$coef[!is.na(fixed)])
+    arma_orders <- ajuste$arma[1:4]
+    patterns <- c('^ar\\d+', '^ma\\d+', '^sar\\d+', '^sma\\d+')
+    new_fixed <- c()
+    new_orders <- arma_orders
+    
+    for (i in 1:4) {
+        new_order <- update_order(arma_orders[i], str_subset(remov_coefs, patterns[i]))
+        new_orders[i] <- new_order
+        if (new_order > 0) {
+            start_index <- ifelse(i>1, sum(arma_orders[1:i-1]), 0)
+            new_fixed <- c(new_fixed, fixed[(start_index+1):(start_index+new_order)])   
+        }
+    }
+    
+    if (any(str_detect(remov_coefs, 'mean|drift')) ) {
+        include_constant <- FALSE
+        if (sum(arma_orders, 2) <= length(fixed)) {
+            new_fixed <- c(new_fixed, fixed[sum(arma_orders,2):length(fixed)])
+        }
+    } else  {
+        include_constant <- any(str_detect(names(ajuste$coef), 'mean|drift|intercept'))
+        new_fixed <- c(new_fixed, fixed[sum(arma_orders,1):length(fixed)])
+    }
+    
+    new_orders <- list(regular=c(new_orders[1], ajuste$arma[6], new_orders[2]),
+                       seasonal=c(new_orders[3], ajuste$arma[7], new_orders[4]),
+                       include_constant=include_constant)
+    return(list(orders=new_orders, fixed=new_fixed))
+    
+}
+
+update_order <- function(order, remov_coefs) {
+    if (length(remov_coefs) == 0) {return(order)}
+    while (as.character(order) %in% str_extract(remov_coefs, '\\d+')) {
+        order <- order - 1
+    }
+    return(order)
+}
+
 
 #' Obtención de los coeficientes ARMA a chequear de un ajuste
 #'
@@ -221,7 +266,7 @@ get_arma_coefs_names <- function(ajuste) {
 #' @return Modelo ajustado (si existe) con coeficientes significativos.
 #' @export
 #'
-fit.coefficients <- function(ajuste, orders, alpha=0.05, show_info=T) {
+fit.coefficients <- function(ajuste, alpha=0.05, show_info=T) {
   
   stat <- qnorm(1-alpha/2)                  # estadístico de contraste
   fixed <- rep(NA, length(ajuste$coef))     # valor inicial de los coeficientes
@@ -245,23 +290,26 @@ fit.coefficients <- function(ajuste, orders, alpha=0.05, show_info=T) {
     }
     
     # Configuración del vector fixed
-    remov <- names(which.min(abs(arma_coefs)/(stat* arma_coefs_sd)))
+    remov <- names(which.min(abs(arma_coefs)/(stat*arma_coefs_sd)))
     fixed[names(ajuste$coef) == remov] <- 0
     if (show_info) {
       cat(paste0('Es necesario retirar del modelo el parámetro: ', remov, '\n'))
     }
     
     # Actualización de los órdenes
-    orders_fixed_update <- update.orders(orders, coefs_names=names(ajuste$coef), fixed=fixed)
+    orders_fixed_update <- update_orders(ajuste, fixed)
     orders <- orders_fixed_update$orders
     fixed <- orders_fixed_update$fixed
     
     # Ajuste del nuevo modelo
-    ajuste <- fit.model(ajuste$x, xreg=ajuste$xreg, orders=orders, fixed=fixed)
+    ajuste <- fit.model(ajuste$x, xregs=ajuste$xreg, orders=orders, fixed=fixed)
     
     # Si no se puede optimizar el modelo se devuelve NA
     if (!is_valid(ajuste)) { 
-      if (show_info) {warning('No se ha podido optimizar el modelo')}
+      if (show_info) {
+          cat(paste0('No se ha podido optimizar el modelo ARIMA(', string_concat(orders$regular), ')[',
+                    string_concat(orders$seasonal), '] con esta configuración\n'))
+          }
       return(NA) 
     }
     
@@ -273,6 +321,17 @@ fit.coefficients <- function(ajuste, orders, alpha=0.05, show_info=T) {
   }
   return(ajuste)
 }
+
+
+string_concat <- function(arr, delimiter=',') {
+    result <- ''
+    for (item in arr[1:(length(arr)-1)]) {
+        result <- paste0(result, item, delimiter)
+    }
+    result <- paste0(result, arr[length(arr)])
+    return(result)
+}
+
 
 
 #' Actualización correcta de los órdenes del modelo cuando alguno se fija a 0
