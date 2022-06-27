@@ -1,4 +1,6 @@
 
+PAD <- 90
+
 #' Ajuste automático de un modelo ARIMA o un modelo ARIMAX
 #' 
 #'
@@ -64,9 +66,9 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
         }
         
         if (show_info) {
-            cat('----------------------------------------------------------------------\n')
+            cat(paste0(stri_dup('-', PAD), '\n'))
             print(ajuste, row.names=F)
-            cat('----------------------------------------------------------------------\n')
+            cat(paste0(stri_dup('-', PAD), '\n'))
         }
         
         # Chequeamos si en el modelo hay parámetros que se pueden sacar
@@ -90,7 +92,7 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
             if (show_info) {
                 cat(paste0('Falla la hipótesis de independencia de los residuos: p-valor=', ljungbox, 
                            '\nModelo no válido. Probamos con el siguiente modelo vía criterio ', ic, '\n'))
-                cat('----------------------------------------------------------------------\n') 
+                cat(paste0(stri_dup('-', PAD), '\n'))
             }
             next
         }
@@ -99,7 +101,7 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
             if (show_info) {
                 cat(paste0('Falla la hipótesis de media nula de los residuos: p-valor=', ttest,
                            '\nModelo no válido. Probamos con el siguiente modelo vía criterio ', ic, '\n'))
-                cat('----------------------------------------------------------------------\n') 
+                cat(paste0(stri_dup('-', PAD), '\n'))
             }
             next
         }
@@ -126,9 +128,9 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
     
     # En caso de que si se haya obtenido un modelo válido, se muestra en pantalla y se devuelve
     if (show_info) {
-        cat('\n----------------------------------------------------------------------\n')
-        cat('|                             MODELO FINAL                           |\n')
-        cat('----------------------------------------------------------------------\n')
+        cat(paste0(stri_dup('-', PAD), '\n'))
+        cat(paste0('|', str_pad('MODELO FINAL', width=PAD-2, side='both', pad=' '), '|\n'))
+        cat(paste0(stri_dup('-', PAD), '\n'))
         print(ajuste, row.names=F)
     }
     
@@ -148,7 +150,7 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
 #' @param ajuste Ajuste del modelo ARIMA.
 #'
 #' @return Lista con los órdenes regulares (`regular`), estacionales (`seasonal`) y una 
-#' variable booleana para indicar si se incluye media/constante (`include_constant`).
+#' variable booleana para indicar si se incluye media/constante (`include_mean`).
 #' @export
 #'
 get_orders <- function(ajuste) {
@@ -163,8 +165,8 @@ get_orders <- function(ajuste) {
   d <- ajuste$arma[6]
   D <- ajuste$arma[7]
   
-  include_constant <- any(c('mean', 'drift') %in% names(ajuste$coef))
-  orders <- list(regular=c(p, d, q), seasonal=c(P, D, Q), include_constant=include_constant)
+  include_mean <- any(c('mean', 'drift') %in% names(ajuste$coef))
+  orders <- list(regular=c(p, d, q), seasonal=c(P, D, Q), include_mean=include_mean)
   return(orders)
 }
 
@@ -190,18 +192,20 @@ update_orders <- function(ajuste, fixed) {
     }
     
     if (any(str_detect(remov_coefs, 'mean|drift')) ) {
-        include_constant <- FALSE
+        include_mean <- FALSE
         if (sum(arma_orders, 2) <= length(fixed)) {
             new_fixed <- c(new_fixed, fixed[sum(arma_orders,2):length(fixed)])
         }
     } else  {
-        include_constant <- any(str_detect(names(ajuste$coef), 'mean|drift|intercept'))
-        new_fixed <- c(new_fixed, fixed[sum(arma_orders,1):length(fixed)])
+        include_mean <- any(str_detect(names(ajuste$coef), 'mean|drift|intercept'))
+        if (sum(arma_orders) < length(fixed)) {
+            new_fixed <- c(new_fixed, fixed[sum(arma_orders,1):length(fixed)])
+        }
     }
     
     new_orders <- list(regular=c(new_orders[1], ajuste$arma[6], new_orders[2]),
                        seasonal=c(new_orders[3], ajuste$arma[7], new_orders[4]),
-                       include_constant=include_constant)
+                       include_mean=include_mean)
     return(list(orders=new_orders, fixed=new_fixed))
     
 }
@@ -314,9 +318,9 @@ fit.coefficients <- function(ajuste, alpha=0.05, show_info=T) {
     }
     
     if (show_info) {
-      cat('----------------------------------------------------------------------\n')
-      print(ajuste, row.names=F)
-      cat('\n**********************************************************************\n')
+        cat(paste0(stri_dup('-', PAD), '\n'))
+        print(ajuste, row.names=F)
+        cat(paste0(stri_dup('-', PAD), '\n'))
     }
   }
   return(ajuste)
@@ -373,14 +377,14 @@ update.orders <- function(orders, coefs_names, fixed=NULL) {
   sma_fixed <- sma_updated$fixed
   
   
-  if (orders$include_constant) {
+  if (orders$include_mean) {
     mask <- sapply(coefs_names, str_detect, c('mean', 'drift', 'intercept'))
     mask <- apply(mask, 2, sum) == 1
     const_value <- fixed[mask]
     if (length(const_value) == 0) {
-        orders$include_constant <- FALSE
+        orders$include_mean <- FALSE
     } else if (!is.na(const_value)) {
-      orders$include_constant <- FALSE
+      orders$include_mean <- FALSE
     }
   }
   
@@ -430,14 +434,26 @@ update.order <- function(order, fixed, mask) {
 #' @export
 #'
 fit.model <- function(serie, orders, xregs=NULL, fixed=NULL, show_info=F) {
-  
-  optimizers <- c('BFGS', 'Nelder-Mead', 'CG', 'L-BFGS-B', 'SANN', 'Brent')
-  
-  for (opt in optimizers) {
+    total_params <- sum(orders$regular[1], orders$regular[3],
+                        orders$seasonal[1], orders$seasonal[3],
+                        ifelse(orders$include_mean, 1, 0),
+                        ifelse(is.null(xregs), 0, ifelse(is.null(ncol(xregs)), 1, ncol(xregs))))
+    
+    if (!is.null(fixed) && (length(fixed) != total_params)) { 
+        print(fixed, row.names=F)
+        print(orders, row.names=F)
+        print(total_params, row.names=F)
+        print(head(xregs), row.names=F)
+        stop('Tamaño incorrrecto de fixed')
+    }
+    
+    optimizers <- c('BFGS', 'Nelder-Mead', 'CG', 'L-BFGS-B', 'SANN', 'Brent')
+    
+    for (opt in optimizers) {
     ajuste <- try(
       suppressWarnings(
         Arima(serie, xreg=xregs, order=orders$regular, seasonal=orders$seasonal, 
-            fixed=fixed, include.constant = orders$include_constant)),
+            fixed=fixed, include.mean = orders$include_mean)),
       silent=T)
     if (is_valid(ajuste)) {
         if (is.null(xregs)) {
@@ -445,9 +461,9 @@ fit.model <- function(serie, orders, xregs=NULL, fixed=NULL, show_info=F) {
         }
         return(ajuste)
     }
-  }
-  if (show_info) { warning('No se ha podido optimizar un modelo\n') }
-  return(NA)
+    }
+    if (show_info) { warning('No se ha podido optimizar un modelo\n') }
+    return(NA)
 }
 
 
@@ -508,17 +524,17 @@ parse.orders <- function(cadena, reg=F, seas=F) {
     
     
     if (grepl('non-zero mean', cadena, fixed=T) || grepl('drift', cadena, fixed=T) || reg) {
-        include_constant <- TRUE
+        include_mean <- TRUE
     } else {
-        include_constant <- FALSE
+        include_mean <- FALSE
     }
     
     if (reg && seas) {
-        include_constant <- FALSE
+        include_mean <- FALSE
     }
     
     orders <- list(regular=regular_order, seasonal=seasonal_order, 
-                   include_constant=include_constant)
+                   include_mean=include_mean)
     return(orders)
 }
 

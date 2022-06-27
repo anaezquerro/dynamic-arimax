@@ -133,6 +133,23 @@ plot_residuals <- function(ajuste, title='Gráfico secuencia de los residuos', a
   
 }
 
+
+plot_correlations <- function(lags, values, n, title='Gráfico de correlaciones') {
+    stat <- qnorm(1-alpha/2)/sqrt(n)
+    
+    sig_lines <- data.frame(x=c(0, 0), xend=rep(max(lags), 2),
+                            y=c(stat, -stat), yend=c(stat, -stat))
+    
+    corr_plot <- plot_ly() %>%
+        add_bars(x=lags, y=values, type='bar', width=(max(lags)-min(lags))/100,
+                 marker=list(color='grey')) %>%
+        add_segments(data=sig_lines, x=~x, xend=~xend, y=~y, yend=~yend,
+                     line=list(color='blue', dash='dot'), showlegend=F) %>%
+        layout(plot_bgcolor='#e5ecf6', title=title, 
+               xaxis=list(title='lags'), yaxis=list(title='correlations'))
+    return(corr_plot)
+}
+
 default_colors <- c(
     '#1f77b4',      # or rgb(31, 119, 180)  // muted blue
     '#ff7f0e',      # or rgb(255, 127, 14)  // safety orange

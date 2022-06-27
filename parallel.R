@@ -1,5 +1,4 @@
 
-PAD <- 80
 
 auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05, 
                                       stationary_method='auto.arima', show_info=T, 
@@ -83,7 +82,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         xregs_list <- as.list(xregs_indexes)
         names(xregs_list) <- xregs_indexes
             
-        ajustes <- mclapply(xregs_list, fit.simple.regression, mc.cores=detectCores())
+        ajustes <- mclapply(xregs_list, fit.simple.regression, mc.cores=detectCores(logical=F))
         if (show_info) { display_results(ajustes) }
         
 

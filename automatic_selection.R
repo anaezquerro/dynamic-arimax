@@ -107,7 +107,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             
             # Ajuste del modelo de regresión dinámica con la nueva variable regresora
             ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
-                                     ic=ic, d=NA, D=NA, alpha=alpha, show_info=T)
+                                     ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
             
             # Si no se consigue un ajuste válido, se prueba con la siguiente variable
             if (all(is.na(ajuste))) {   
@@ -328,7 +328,7 @@ has_trend <- function(x, test='auto.arima', alpha=0.05) {
 #' se devuelve `NA`.
 #' @export
 #'
-select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto.arima') {
+select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto.arima', less0=T) {
     if (!method %in% c('auto.arima', 'adf.test')) {
         stop('El parámetro `method` debe ser "auto.arima" o "adf.test"')
     }
@@ -364,8 +364,11 @@ select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto
     
     # Obtenemos del objeto resultante las correlaciones y los retardos menores o iguales que 0
     series_lags <- series_prewhiten$ccf$lag
-    series_acfs <- series_prewhiten$ccf$acf[series_lags <= 0]
-    series_lags <- series_lags[series_lags <= 0]
+    series_acfs <- series_prewhiten$ccf$acf
+    if (less0) {
+        series_acfs <- series_acfs[series_lags <= 0]
+        series_lags <- series_lags[series_lags <= 0]
+    }
     
     # Si tenemos un límite de magnitud para el retardo, filtramos aquellos que tengan 
     # magnitud mayor
@@ -418,7 +421,7 @@ get.maximum.lag <- function(serie, xregs, alpha=0.05, method='auto.arima') {
     
     for (i in 1:ncol(xregs)) {
         xreg <- xregs[, i]
-        optimal_lag <- select.optimal.lag(serie, xreg, alpha=alpha, method=method)
+        optimal_lag <- select.optimal.lag(serie, xreg, alpha=alpha, method=method, less0=F)
         if (is.na(optimal_lag)) {
             next
         }
