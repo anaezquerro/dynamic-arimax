@@ -29,7 +29,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         
         # Creación de la matriz de tipo `ts` con la variables respuesta, variables 
         # regreosras anteriormente añadidas y nueva variable regresora
-        data_new <- construct.data(model_history, response, xregs, xreg_name, optimal_lag, max_lag)
+        data_new <- construct.data(model_history, response, xregs, xreg_name, optimal_lag)
         
         # Ajuste del modelo de regresión dinámica con la nueva variable regresora
         ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
@@ -62,13 +62,18 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     best_ic <- Inf
     model_history <- data.frame(var=NA, lag=NA, ic=NA)
     
-    # response: serie sobre la que se calcula el retardo óptimo en cada iteración (residuos)
-    response <- serie       # inicialmente, response = serie
-    
     # Cálculo del retardo óptimo máximo de cada variable regresora sobre la variable respuesta. 
     # Se utilizará posteriormente para recortar las series y poder comparar modelos construidos 
     # con series del mismo tamaño
     max_lag <- get.maximum.lag(serie, xregs, alpha=alpha, method=stationary_method)
+    
+    # Recortamos todas las series
+    serie_original <- serie; xregs_original <- xregs   # almacenamos las series originales
+    if (max_lag > 0) {
+        serie <- window(serie, start=start(serie)[1]+max_lag)
+        xregs <- as.data.frame(lapply(xregs, function(x) window(x, start=start(x)[1]+max_lag)))   
+    }
+    response <- serie       # inicialmente, response = serie
     
     # Inicio del bucle para añadir variables regresoras
     for (i in 1:ncol(xregs)) {
@@ -119,34 +124,35 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     
     # Si ya no entran más variables (y ha entrado al menos una) se ajusta el 
     # modelo completo donde las innovaciones sigan un proceso ARMA
-    if (!any(is.na(model_history))) {
+    if (!any(is.na(model_history)) && (sum(global_fit$arma[6:7]) > 0)) {
         data_new <- construct.data(model_history, serie, xregs, new_xreg_name = NULL, 
-                                   optimal_lag = NULL, max_lag = max_lag)
+                                   optimal_lag = NULL)
         global_fit <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)],
                                      ic=ic, d=0, D=0, alpha=alpha, show_info=F)    
+    }
         
-        # Si se consigue un modelo válido, se devuelve
-        if (is_valid(global_fit)) {
-            best_ic <- global_fit[[ic]]
-            
-            if (show_info) {
-                cat('No se añaden más variables\n\n')
-            }
-            if (ndiff > 1) {
-                warning(paste0('Se han aplicado ', ndiff, ' diferencias regulares'))
-            }
-            
-            cat(paste0(stri_dup('-', PAD), '\n'))
-            cat(paste0('|', 
-                str_pad(paste0('Histórico de variables añadidas al modelo (ndiff=', ndiff, ')'), width=PAD-2, 
-                        side='both', pad=' '), '|\n'))
-            cat(paste0(stri_dup('-', PAD), '\n'))
-            print(model_history, row.names=F)
-            print(global_fit, row.names=F)
-            global_fit$ndiff <- ndiff
-            global_fit$history <- model_history
-            return(global_fit)
+    # Si se consigue un modelo válido, se devuelve
+    if (is_valid(global_fit)) {
+        best_ic <- global_fit[[ic]]
+        
+        if (show_info) {
+            cat('No se añaden más variables\n\n')
         }
+        if (ndiff > 1) {
+            warning(paste0('Se han aplicado ', ndiff, ' diferencias regulares'))
+        }
+        
+        cat(paste0(stri_dup('-', PAD), '\n'))
+        cat(paste0('|', 
+            str_pad(paste0('Histórico de variables añadidas al modelo (ndiff=', ndiff, ')'), width=PAD-2, 
+                    side='both', pad=' '), '|\n'))
+        cat(paste0(stri_dup('-', PAD), '\n'))
+        print(model_history, row.names=F)
+        cat(paste0(stri_dup('-', PAD), '\n'))
+        print(global_fit, row.names=F)
+        global_fit$ndiff <- ndiff
+        global_fit$history <- model_history
+        return(global_fit)
     }
     
     
@@ -156,15 +162,15 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     # a) Diferenciar todas las variables y volver a llamar a la función auto.fit.arima.regression
     # b) Si ndiff=2 no se recomienda diferenciar más y se ajusta un ARIMA sin regresoras
     if (ndiff < 3) {
-        cat(paste0('No se ha podido encontrar un modelo válido\n',
+        cat(paste0('No se ha podido encontrar un modelo válido con errores estacionarios\n',
                    'Se aplica una diferenciación regular (ndiff=', ndiff+1, 
                    ') y se vuelve a llamar a la función\n'))
         cat(paste0(stri_dup('-', PAD), '\n'))
         
-        serie <- diff(serie)
+        serie <- diff(serie_original)
         xregs <- as.data.frame(lapply(xregs, diff))
         return(
-            auto.fit.arima.regression(serie, xregs, ic, alpha, stationary_method, 
+            auto.fit.arima.regression(serie, xregs_original, ic, alpha, stationary_method, 
                                       show_info, ndiff+1)
         )
     }

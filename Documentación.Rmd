@@ -45,7 +45,7 @@ lang: es
 
 ```{r, echo=F, warning=F, message=F}
 knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
-                      fig.height = 8, message=F, comment='')
+                      fig.height = 8, message=F, comment='', warning=F)
 eval(parse("plot_tools.R", encoding="UTF-8"))
 eval(parse("arima_simulation.R", encoding="UTF-8"))
 eval(parse("auto_fit_arima.R", encoding="UTF-8"))
@@ -239,9 +239,7 @@ deaths_england <- ts(deaths$United.Kingdom, frequency=7)
 
 regresoras <- data.frame(confirmed_spain, recovered_spain)
 
-elapsed_time <- system.time(
-    ajuste <- auto.fit.arima.regression(deaths_spain, regresoras)
-)
+ajuste <- auto.fit.arima.regression(deaths_spain, regresoras)
 ```
 
 
@@ -307,11 +305,12 @@ select.optimal.lag(serie, xreg, alpha=0.05, max_lag=NA)
 
 \newpage
 
+
 # Predicciones puntuales a horizonte $h$ e intervalos de confianza (`forecasting_model()` de `forecasting.R`)
 
 **Descripción**: A partir del ajuste de un ARIMAX realiza predicciones puntuales a horizonte $h$ de cada variable regresora para introducirlas en las predicciones puntuales de la variable respuesta.
 
-**Devuelve**: Objeto `forecast` con las predcciones puntuales y los intervalos de confianza.
+**Devuelve**: Objeto `forecast` con las predicciones puntuales y los intervalos de confianza.
 
 ```{r, eval=F}
 forecast_model(ajuste, h, mode=c('bootstrap', 'norm'), levels=c(80, 90))
@@ -337,6 +336,10 @@ ajuste_patatas$xreg <- cbind(X=ts(ajuste_patatas$xreg))
 preds <- forecast_model(ajuste_patatas, h=10, mode='bootstrap')
 display(plot_forecast(preds), name='preds_patatas')
 ```
+
+
+
+
 
 \newpage
 
@@ -380,7 +383,7 @@ Y comprobamos que el mejor modelo (siguiendo el AICc) es un ARIMA(2, 0, 1) con m
 ajuste
 ```
 
-A continuación, comprobamos qué parámetros *no* son signficativos:
+A continuación, comprobamos qué parámetros *no* son significativos:
 
 ```{r}
 alpha <- 0.05; stat <- qnorm(1-0.05/2)
@@ -414,92 +417,174 @@ Cargamos la base de datos y separamos la variable respuesta (`response`) del con
 ```{r}
 microsoft <- read.csv('data/microsoft-stock.csv')
 str(microsoft)
-response <- ts(microsoft$Close)
+close <- ts(microsoft$Close)
 open <- ts(microsoft$Open)
 high <- ts(microsoft$High)
 low <- ts(microsoft$Low)
 volume <- ts(microsoft$Volume)
 ```
 
-**Fase 1**: Preblanqueado para cada par $(X_i, Y)$ para eliminar la correlación espuria y para obtener el retardo significativo óptimo. Realizamos este procedimiento con la variable regresora `Open`:
+**Inicialización**: Selección de un retardo máximo permitido para las variables regresoras que se van añadiendo al modelo.
+
+
+Asumiendo que se dispone de un conjunto de series temporales (del cual una de ellas funciona como variable respuesta y el resto como candidatas a variables regresoras) de tamaño $T$, en cada iteración del algoritmo de añade una nueva variable regresora con retardo $r$ y se compara su criterio de información con un modelo de regresión más sencillo que no tiene esa variable (el modelo anterior del algoritmo). Para que estas comparaciones iterativas se realicen con el mismo número de datos, es necesario recortar todas las series por el ḿáximo retardo permitido (este valor se denomina como `max_lag` en el código). 
+
+
+La función `get.maximum.lag()` aproxima este valor como el máximo (en valor absoluto) de los retardos significativos de todas las variables candidatas a regresoras, sin la restricción de que este sea menor o igual a 0. Formalmente:
+
+$$ \mathcal{R} = \max_{i=1\cdots m} \Big\{ | \underset{k\in\mathbb{Z}}{\arg\max} \big\{|\rho_k(X_i, Y)| \big\} \Big\}$$
+donde $\rho_k(X,Y)$ es la correlación entre dos procesos preblanqueados $X$ e $Y$ en el retardo $k$.
+
+Para obtener estos retardos para cada variable se debe aplicar el **proceso de preblanqueado** entre cada par $(X_i,Y)$ para eliminar la correlación espuria y obtener los retardos donde se produce una correlación significativa. Realizamos este proceso para la variable regresora `Open`:
 
 ```{r}
-open_lagged <- open; close_lagged <- close
+open_diff <- open; close_diff <- close
 
 # Chequear estacionariedad con el adf.test y diferenciar hasta eliminar la 
 # estacionariedad en ambas
-adf.test(open_lagged); adf.test(close_lagged)
-open_lagged <- diff(open_lagged); close_lagged <- diff(close_lagged)
+adf.test(open_diff); adf.test(close_diff)
+open_diff <- diff(open_diff); close_diff <- diff(close_diff)
 
 # Aplicando una única diferenciación ya se obtienen dos variables sin estacionariedad
-adf.test(open_lagged); adf.test(close_lagged)
+adf.test(open_diff); adf.test(close_diff)
 
 # Realizamos el preblanqueado 
-series_prewhiten <- TSA::prewhiten(open_lagged, close_lagged, plot=F)
+series_prewhiten <- TSA::prewhiten(open_diff, close_diff, plot=F)
 
-corr_plot <- plot_correlations(
-    lags=c(series_prewhiten$ccf$lag), values=c(series_prewhiten$ccf$acf),
-    n=series_prewhiten$ccf$n.used, title='Gráfico de correlaciones simple'
-)
-display(corr_plot, "fig-open1", width=1000, height=800)
+corr_plot <- plot_prewhiten(series_prewhiten)
+display(corr_plot, "fig-open0", width=1000, height=800)
+cat(paste0('Correlación máxima con la variable Open en el retardo: ', 
+           series_prewhiten$ccf$lag[which.max(abs(series_prewhiten$ccf$acf))]))
 ```
 
-Como podemos apreciar, el retardo óptimo (no superior a $0$) se encuentra en $r=0$. A continuación, procedemos a ajustar un modelo ARIMA (sin la restricción de estacionariedad sobre sus residuos). Podemos ajustar este modelo a mano (utilizando la función `stats::auto.arima` y retirando los coeficientes no significativos), pero para este caso utilizaremos la función ya descrita anteriormente, `auto.fit.arima`, que realiza todo este proceso de forma automática.
+Como podemos apreciar en el gráfico, la mayor correlación significativa (en valor absoluto) se encuentra en $\mathrm{lag}=1$. A la hora de añadir variables al modelo, este retardo no sería válido para introducir esta variable regresora (pues es mayor a 0). No obstante, para fijar un valor para $\mathcal{R}$ sí se tiene en cuenta.
 
-```{r}
-ajuste_open <- auto.fit.arima(close, xregs=cbind(open=open), show_info=F)
-ajuste_open
-```
+Si repetimos este proceso para las otras 3 variables:
 
-Repetimos el poceso de preblanqueado y ajuste del modelo (retardando la variable regresora con el retardo $r$ óptimo) para todas las variables restantes:
+
 
 ```{r}
 # Preblanqueado con la variable high
-high_lagged <- high; close_lagged <- close
-adf.test(high_lagged); adf.test(close_lagged)
-high_lagged <- diff(high_lagged); close_lagged <- diff(close_lagged)
-adf.test(high_lagged); adf.test(close_lagged)
+high_diff <- high; close_diff <- close
+adf.test(high_diff); adf.test(close_diff)
+high_diff <- diff(high_diff); close_diff <- diff(close_diff)
+adf.test(high_diff); adf.test(close_diff)
 
-series_prewhiten <- TSA::prewhiten(high_lagged, close_lagged, plot=F)
-corr_plot <- plot_correlations(
-    lags=c(series_prewhiten$ccf$lag), values=c(series_prewhiten$ccf$acf),
-    n=series_prewhiten$ccf$n.used, title='Gráfico de correlaciones simple'
-)
-display(corr_plot, "fig-high1", width=1000, height=800)
+series_prewhiten <- TSA::prewhiten(high_diff, close_diff, plot=F)
+corr_plot <- plot_prewhiten(series_prewhiten)
+display(corr_plot, "fig-high0", width=1000, height=800)
+cat(paste0('Correlación máxima con la variable High en el retardo: ', 
+           series_prewhiten$ccf$lag[which.max(abs(series_prewhiten$ccf$acf))], '\n'))
 
 # Preblanqueado con la variable low
-low_lagged <- low; close_lagged <- close
-adf.test(low_lagged); adf.test(close_lagged)
-low_lagged <- diff(low_lagged); close_lagged <- diff(close_lagged)
-adf.test(low_lagged); adf.test(close_lagged)
+low_diff <- low; close_diff <- close
+adf.test(low_diff); adf.test(close_diff)
+low_diff <- diff(low_diff); close_diff <- diff(close_diff)
+adf.test(low_diff); adf.test(close_diff)
 
-series_prewhiten <- TSA::prewhiten(low_lagged, close_lagged, plot=F)
-corr_plot <- plot_correlations(
-    lags=c(series_prewhiten$ccf$lag), values=c(series_prewhiten$ccf$acf),
-    n=series_prewhiten$ccf$n.used, title='Gráfico de correlaciones simple'
-)
-display(corr_plot, "fig-low1", width=1000, height=800)
+series_prewhiten <- TSA::prewhiten(low_diff, close_diff, plot=F)
+corr_plot <- plot_prewhiten(series_prewhiten)
+display(corr_plot, "fig-low0", width=1000, height=800)
+cat(paste0('Correlación máxima con la variable Low en el retardo: ', 
+           series_prewhiten$ccf$lag[which.max(abs(series_prewhiten$ccf$acf))], '\n'))
 
 # Preblanqueado con la variable volume
-volume_lagged <- volume; close_lagged <- close
-adf.test(volume_lagged); adf.test(close_lagged)
-volume_lagged <- diff(volume_lagged); close_lagged <- diff(close_lagged)
-adf.test(volume_lagged); adf.test(close_lagged)
+volume_diff <- volume; close_diff <- close
+adf.test(volume_diff); adf.test(close_diff)
+volume_diff <- diff(volume_diff); close_diff <- diff(close_diff)
+adf.test(volume_diff); adf.test(close_diff)
 
-series_prewhiten <- TSA::prewhiten(volume_lagged, close_lagged, plot=F)
-corr_plot <- plot_correlations(
-    lags=c(series_prewhiten$ccf$lag), values=c(series_prewhiten$ccf$acf),
-    n=series_prewhiten$ccf$n.used, title='Gráfico de correlaciones simple'
-)
-display(corr_plot, "fig-volume1", width=1000, height=800)
+series_prewhiten <- TSA::prewhiten(volume_diff, close_diff, plot=F)
+corr_plot <- plot_prewhiten(series_prewhiten)
+display(corr_plot, "fig-volume0", width=1000, height=800)
+cat(paste0('Correlación máxima con la variable Volume en el retardo: ', 
+           series_prewhiten$ccf$lag[which.max(abs(series_prewhiten$ccf$acf))], '\n'))
 ```
-
-Los resultados del preblanqueado sobre todas las variables es que los retardos óptimos (para todas las variables) se encuentran en $r=0$, por lo que no es necesario diferenciar ninguna variable regresora. A continuación, ajustamos los modelos ARIMAX entre cada par $(X_i, Y)$:
+En el resto de variables, la máxima correlación (en términos absolutos) se produce en $k=0$, por lo que $\mathcal{R}=1$. Tendremos por tanto que recortar las series un total de $\mathcal{R}$ valores para tener el mismo número de datos con los que comparar los modelos.
 
 ```{r}
+# Recortamos las variables
+max_lag <- 1
+close <- window(close, start=start(close)[1]+max_lag)
+open <- window(open, start=start(open)[1]+max_lag)
+high <- window(high, start=start(high)[1]+max_lag)
+low <- window(low, start=start(low)[1]+max_lag)
+volume <- window(volume, start=start(volume)[1]+max_lag)
+```
+
+
+
+**Fase 1**: Una vez recortadas las series, se aplica de nuevo el preblanqueado para cada par $(X_i, Y)$ para eliminar la correlación espuria y obtener el retardo significativo (esta vez el retardo $k$ debe ser menor o igual a 0).
+
+```{r}
+alpha <- 0.05      # nivel de significación
+trend <- function(x) {return(suppressWarnings(adf.test(x)$p.value) >= alpha)}
+
+
+# Preblanqueado para la variable open
+open_diff <- open; close_diff <- close
+while (any(apply(cbind(open_diff, close_diff), 2, trend))) {
+    open_diff <- diff(open_diff)
+    close_diff <- diff(close_diff)
+}
+series_prewhiten <- TSA::prewhiten(open_diff, close_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable Open en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+
+# Preblanqueado para la variable high
+high_diff <- high; close_diff <- close
+while (any(apply(cbind(high_diff, close_diff), 2, trend))) {
+    high_diff <- diff(high_diff)
+    close_diff <- diff(close_diff)
+}
+series_prewhiten <- TSA::prewhiten(high_diff, close_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable high en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+
+
+# Preblanqueado con la variable low
+low_diff <- low; close_diff <- close
+while (any(apply(cbind(low_diff, close_diff), 2, trend))) {
+    low_diff <- diff(low_diff)
+    close_diff <- diff(close_diff)
+}
+series_prewhiten <- TSA::prewhiten(low_diff, close_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable low en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+
+# Preblanqueado con la variable volume
+volume_diff <- volume; close_diff <- close
+while (any(apply(cbind(volume_diff, close_diff), 2, trend))) {
+    volume_diff <- diff(volume_diff)
+    close_diff <- diff(close_diff)
+}
+series_prewhiten <- TSA::prewhiten(volume_diff, close_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable volume en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+
+```
+
+Como podemos apreciar, todas las variables regresoras tienen su correlación máxima en el retardo $k=0$, por lo que no es necesario alterar ninguna de las series para construir un modelo para cada par $(X_i,Y)$. 
+
+A continuación, procedemos a ajustar un modelo ARIMA (sin la restricción de estacionariedad sobre sus residuos) para cada variable candidata a regresora. Podemos ajustar este modelo a mano (utilizando la función `stats::auto.arima` y retirando los coeficientes no significativos), pero para este caso utilizaremos la función ya descrita anteriormente, `auto.fit.arima`, que realiza todo este proceso de forma automática.
+
+*Nota*: En este caso utilizaremos como cirterio de información el BIC.
+
+```{r}
+# Ajuste de un modelo con la variable open
+ajuste_open <- auto.fit.arima(close, xregs=cbind(open=open), show_info=F)
+ajuste_open
+
 # Ajuste de un modelo con la variable high
-ajuste_high <- select.optimal.lag(ts(close[2:length(close)]),
-                              ts(volume[2:length(open)]))
+ajuste_high <- auto.fit.arima(close, xregs=cbind(high=high), show_info=F)
 ajuste_high
 
 # Ajuste de un modelo con la variable low
@@ -513,59 +598,196 @@ ajuste_volume
 
 Los resultados obtenidos en esta primera iteración son los siguientes:
 
-- El mejor modelo para la variable `Open` es un ARIMA(0,0,0) con AICc=5927.5 y retardo nulo.
-- El mejor modelo para la variable `High` es un ARIMA(1,0,3) con AICc=4930.62 y retardo nulo.
+- El mejor modelo para la variable `Open` es un ARIMA(0,0,0) con AICc=5924.58 y retardo nulo.
+- No se puede encontrar un modelo para la variable `High` con retardo nulo.
 - No se puede encontrar un modelo para la variable `Low` con retardo nulo.
 - No se puede encontrar un modelo para la variable `Volume` con retardo nulo.
 
-Como el "mejor" criterio de información se obtiene al añadir la variable `High` al modelo, se toma dicho ajuste y se calculan los residuos. Estos residuos pasarán a ser la variable respuesta y se repetirá el proceso en busca de nuevas variables a añadir al modelo.
+Como el "mejor" criterio de información se obtiene al añadir la variable `Open` al modelo, se toma dicho ajuste y se calculan los residuos. Estos residuos pasarán a ser la variable respuesta y se repetirá el proceso en busca de nuevas variables a añadir al modelo.
 
 ```{r}
-response <- residuals(ajuste_high, type='regression')
+response <- residuals(ajuste_open, type='regression')
 ```
 
 **Fase 2**: Búsqueda de variables a añadir al modelo tomando como variable respuesta los residuos del modelo anterior.
 
-Aplicamos preblanqueado a las variables que no se han introducido en el modelo (i.e. todas excepto `High`):
+Aplicamos de nuevo el preblanqueado a las variables que no se han introducido en el modelo (i.e. todas excepto `Open`):
 
 ```{r}
-# Preblanqueado con la variable open
-open_lagged <- open; response_lagged <- response
-adf.test(open_lagged); adf.test(response_lagged)
-open_lagged <- diff(open_lagged); response_lagged <- diff(response_lagged)
-adf.test(open_lagged); adf.test(response_lagged)
+# Preblanqueado para la variable high
+high_diff <- high; response_diff <- response
+while (any(apply(cbind(high_diff, response_diff), 2, trend))) {
+    high_diff <- diff(high_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(high_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable high en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
 
-series_prewhiten <- TSA::prewhiten(open_lagged, response_lagged, plot=F)
-corr_plot <- plot_correlations(
-    lags=c(series_prewhiten$ccf$lag), values=c(series_prewhiten$ccf$acf),
-    n=series_prewhiten$ccf$n.used, title='Gráfico de correlaciones simple'
-)
-display(corr_plot, "fig-open2", width=1000, height=800)
 
 # Preblanqueado con la variable low
-low_lagged <- low; response_lagged <- response
-adf.test(low_lagged); adf.test(response_lagged)
-low_lagged <- diff(low_lagged); response_lagged <- diff(response_lagged)
-adf.test(low_lagged); adf.test(response_lagged)
-
-series_prewhiten <- TSA::prewhiten(low_lagged, response_lagged, plot=F)
-corr_plot <- plot_correlations(
-    lags=c(series_prewhiten$ccf$lag), values=c(series_prewhiten$ccf$acf),
-    n=series_prewhiten$ccf$n.used, title='Gráfico de correlaciones simple'
-)
-display(corr_plot, "fig-low2", width=1000, height=800)
+low_diff <- low; response_diff <- response
+while (any(apply(cbind(low_diff, response_diff), 2, trend))) {
+    low_diff <- diff(low_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(low_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable low en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
 
 # Preblanqueado con la variable volume
-volume_lagged <- volume; response_lagged <- response
-adf.test(volume_lagged); adf.test(response_lagged)
+volume_diff <- volume; response_diff <- response
+while (any(apply(cbind(volume_diff, response_diff), 2, trend))) {
+    volume_diff <- diff(volume_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(volume_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable volume en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+```
 
-series_prewhiten <- TSA::prewhiten(volume_lagged, response_lagged, plot=F)
-corr_plot <- plot_correlations(
-    lags=c(series_prewhiten$ccf$lag), values=c(series_prewhiten$ccf$acf),
-    n=series_prewhiten$ccf$n.used, title='Gráfico de correlaciones simple'
-)
-display(corr_plot, "fig-volume2", width=1000, height=800)
+En esta segunda iteración vemos que los retardos óptimos se producen en valores $k\neq 0$. Teniendo esto en cuenta debemos "alterar" las series correspondientes a las variables regresoras para construir el modelo ARIMAX.
+
+```{r}
+high_lagged <- lag(high, -1)
+low_lagged <- lag(low, -1)
+head(high_lagged)
+head(low_lagged)
+```
+Como podemos comprobar ahora las variables que han sido retardadas tienen su inicio en el tiempo $t=3$ (uno más que sin retardar). Para construir un ARIMAX con la variable respuesta no se pueden introducir de esta forma en la función `auto.arima`, pues esta no tiene en cuenta el inicio de cada serie temporal. La forma correcta de introducirlas es construyendo una matriz para que coincidan los tiempos del par de series temporales:
+
+```{r}
+data_high <- cbind(close, open, high=window(high_lagged, start=start(close)))
+head(data_high)
+
+data_low <- cbind(close, open, low=window(low_lagged, start=start(close)))
+head(data_low)
+
+data_volume <- cbind(close, open, volume)
+head(data_volume)
+```
+
+Una vez retardadas las variables procedemos a ampliar el modelo inicial:
+
+```{r}
+ajuste_high <- auto.fit.arima(data_high[, c(1)],    # variable respuesta
+                              data_high[, -c(1)],   # variables regresoras
+                              show_info=F)
+ajuste_high
+
+ajuste_low <- auto.fit.arima(data_low[, c(1)], xregs=data_low[, -c(1)], show_info=F)
+ajuste_low
+
+ajuste_volume <- auto.fit.arima(data_volume[, c(1)], xregs=data_volume[, -c(1)], 
+                                show_info=F)
+ajuste_volume
+```
+Los resultados de la segunda iteración son los siguientes:
+
+
+- El mejor modelo para la variable `High` y `Open` es un ARIMA(0,0,0) con AICc=5918.6 y retardo $k=-1$ (se ha mejorado el modelo anterior).
+- El mejor modelo para la variable `Low` y `Open` es un ARIMA(0,0,0) con AICc=5921.36 y retardo $k=-1$ (se ha mejorado el modelo anterior).
+- No se puede encontrar un modelo para la variable `Volume` y `Open` con retardo nulo.
+
+A partir de esto se toma el modelo con las variables regresoras `High` y `Open` y se calculan sus residuos.
+
+```{r}
+response <- residuals(ajuste_low, type='regression')
+head(response)
+```
+
+Estos residuos serán utilizados para la siguiente iteración para escoger nuevos retardos con los que añadir más variables regresoras.
+
+*Nota*: Los residuos tienen valores nulos. Para aplicar el `adf.test` será necesario eliminarlos.
+
+
+**Fase 3**: Búsqueda de variables a añadir al modelo tomando como variable respuesta los residuos del modelo anterior.
+
+Volvemos a aplicar preblanqueado con los residuos del modelo anterior y las covariables que aún no han sido añadidas al modelo:
+
+
+
+```{r}
+# función modificada para ignorar valores nulos
+trend <- function(x) {return(suppressWarnings(adf.test(x[!is.na(x)])$p.value) > alpha)}
+
+
+# Preblanqueado con la variable low
+low_diff <- low; response_diff <- response
+while (any(apply(cbind(low_diff, response_diff), 2, trend))) {
+    low_diff <- diff(low_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(low_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable low en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+
+# Preblanqueado con la variable volume
+volume_diff <- volume; response_diff <- response
+while (any(apply(cbind(volume_diff, response_diff), 2, trend))) {
+    volume_diff <- diff(volume_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(volume_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable volume en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+```
+Volvemos a construir las matrices con las series temporales que actuarán como regresoras en el nuevo modelo:
+
+
+```{r}
+data_low <- cbind(close, open, high=window(high_lagged, start=start(close)), 
+                  low=window(low_lagged, start=start(close)))
+head(data_low)
+
+data_volume <- cbind(close, open, high=window(high_lagged, start=start(close)), volume)
+head(data_volume)
+```
+
+Y ajustamos los dos modelos:
+
+
+```{r}
+ajuste_low <- auto.fit.arima(data_low[, c(1)], xregs=data_low[, -c(1)], show_info=F)
+ajuste_low
+
+ajuste_volume <- auto.fit.arima(data_volume[, c(1)], xregs=data_volume[, -c(1)], 
+                                show_info=F)
+ajuste_volume
+```
+
+- El mejor modelo para la variable `Low`, `High`, `Open` es un ARIMA(0,0,0) con AICc=5920.59 y retardo $k=-1$ (no se ha mejorado el modelo anterior).
+- No se puede encontrar un modelo para la variable `Volume`, `High`, `Open`  con retardo nulo.
+
+Como al añadir el modelo `Low` no se ha mejorado el criterio de información escogido (el AICc) no se añade la variable `Low` al modelo y se detiene el algoritmo de adición de variables regresoras.
+
+Como el modelo anterior (`ajuste_high`) tiene errores estacionarios se asume como modelo final. Si tuviera errores estacionarios (modelizables por un ARIMA con $d>0$) entonces se tendría que intentar ajustar un modelo ARIMAX con errores estacionarios y, en caso de no ser posible
+
+```{r}
+ajuste_high
+```
+Podemos comprobar que utilizando la función `auto.fit.arima.regression` se automatiza todo este proceso y se tienen los mismos resultados:
+
+
+```{r}
+microsoft <- read.csv('data/microsoft-stock.csv')
+close <- ts(microsoft$Close)
+regresoras <- as.data.frame(
+    lapply(microsoft[, c('Open', 'High', 'Low', 'Volume')], ts))
+auto.fit.arima.regression(serie=close, xregs=regresoras, ic='aicc', stationary_method='adf.test')
 ```
 
 
-En esta segunda iteración 
+
+
+

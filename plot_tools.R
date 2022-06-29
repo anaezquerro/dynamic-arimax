@@ -134,18 +134,22 @@ plot_residuals <- function(ajuste, title='Gráfico secuencia de los residuos', a
 }
 
 
-plot_correlations <- function(lags, values, n, title='Gráfico de correlaciones') {
+plot_prewhiten <- function(prewhiten_object, alpha=0.05) {
+    lags <- c(prewhiten_object$ccf$lag)
+    values <- c(prewhiten_object$ccf$acf)
+    n <- prewhiten_object$ccf$n.used
+    
     stat <- qnorm(1-alpha/2)/sqrt(n)
     
-    sig_lines <- data.frame(x=c(0, 0), xend=rep(max(lags), 2),
+    sig_lines <- data.frame(x=rep(min(lags), 2), xend=rep(max(lags), 2),
                             y=c(stat, -stat), yend=c(stat, -stat))
     
     corr_plot <- plot_ly() %>%
         add_bars(x=lags, y=values, type='bar', width=(max(lags)-min(lags))/100,
-                 marker=list(color='grey')) %>%
+                 marker=list(color='grey'), name='acf') %>%
         add_segments(data=sig_lines, x=~x, xend=~xend, y=~y, yend=~yend,
                      line=list(color='blue', dash='dot'), showlegend=F) %>%
-        layout(plot_bgcolor='#e5ecf6', title=title, 
+        layout(plot_bgcolor='#e5ecf6', title='Gráfico de correlaciones', 
                xaxis=list(title='lags'), yaxis=list(title='correlations'))
     return(corr_plot)
 }

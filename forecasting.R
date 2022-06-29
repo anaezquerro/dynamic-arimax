@@ -1,17 +1,26 @@
 
-forecast_model <- function(ajuste, h, mode=c('bootstrap', 'norm'), levels=c(80, 90)) {
+
+
+forecast_model <- function(serie, xregs, ajuste, h, mode=c('bootstrap', 'norm'), levels=c(80, 90)) {
+    if (class(xregs) != 'data.frame') { stop('El argumento `xregs` debe ser un data.frame') }
+    if (!all(unlist(lapply(xregs, class)) == "ts")) {
+        stop('Las variables regresoras del data.frame `xregs` deben ser de tipo ts')
+    }
+    if (class(serie) != 'ts') { stop('El argumento `serie` debe ser de tipo ts') }
     if (class(mode) != 'character') {stop('Argumento `mode` debe ser una cadena de caracteres')}
     if (!(mode %in% c('bootstrap', 'norm'))) {stop('Modo no válido')}
     
+    # último momento t del que se tienen valores para la variable respuesta
     finalT <- end(na.remove(ajuste$x))[1]
     
+    # calculamos predicciones puntuales para cada variable regresora hasta llegar al 
+    # momento finalT + h
     xregs_pred <- matrix(NA, nrow=h, ncol=ncol(ajuste$xreg))
     for (j in 1:ncol(ajuste$xreg)) {
         if (mode == 'bootstrap') {bootst=T} else if (mode == 'norm') {bootst <- F}
         
-         # Predicciones puntuales para cada variable
-         xreg <- na.remove(ajuste$xreg[, j])
-         xreg_ajuste <- auto.fit.arima(xreg, show_info = F)
+        xreg <- na.remove(ajuste$xreg[, j])    # eliminamos los valores ausentes de la variable regresora
+        xreg_ajuste <- auto.fit.arima(xreg, show_info = F)  # ajustamos un modelo para esa variable
          
          if (!bootst && !is_norm(xreg_ajuste)) {
              bootst <- TRUE

@@ -1,3 +1,5 @@
+PAD <- 90
+
 #' Selección automática de variables regresoras en un modelo de regresión dinámica
 #' 
 #' \deqn{ Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \beta_2 X_{t-r_2}^{(2)} + \cdots 
@@ -52,21 +54,23 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     if (class(serie) != 'ts') {
         stop('El arguemnto `serie` debe ser de tipo ts')
     }
-    if (frequency(serie) == 1) { 
-        seasonal <- F
-    }
     
     # Inicialización de variables que se utilizarán a lo largo del algoritmo
     best_ic <- Inf
     model_history <- data.frame(var=NA, lag=NA, ic=NA)
     
-    # response: serie sobre la que se calcula el retardo óptimo en cada iteración (residuos)
-    response <- serie       # inicialmente, response = serie
-    
     # Cálculo del retardo óptimo máximo de cada variable regresora sobre la variable respuesta. 
     # Se utilizará posteriormente para recortar las series y poder comparar modelos construidos 
     # con series del mismo tamaño
     max_lag <- get.maximum.lag(serie, xregs, alpha=alpha, method=stationary_method)
+    
+    # Recortamos todas las series
+    serie_original <- serie; xregs_original <- xregs   # almacenamos las series originales
+    if (max_lag > 0) {
+        serie <- window(serie, start=start(serie)[1]+max_lag)
+        xregs <- as.data.frame(lapply(xregs, function(x) window(x, start=start(x)[1]+max_lag)))   
+    }
+    response <- serie       # inicialmente, response = serie
     
     # Inicio del bucle para añadir variables regresoras
     for (i in 1:ncol(xregs)) {
@@ -92,7 +96,8 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             }
             
             # Cálculo del retardo óptimo entre la variable regresora y la respuesta
-            optimal_lag <- select.optimal.lag(response, xreg, max_lag=max_lag, method=stationary_method)
+            optimal_lag <- select.optimal.lag(response, xreg, alpha=0.05, max_lag=max_lag, method=stationary_method)
+                
             
             # Si no hay retardo significativo, se pasa a evaluar la siguiente variable
             if (is.na(optimal_lag)) {
@@ -103,7 +108,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             
             # Creación de la matriz de tipo `ts` con la variable respuesta, variables 
             # regresoras anteriormente añadidas y nueva variable regresora
-            data_new <- construct.data(model_history, serie, xregs, xreg_name, optimal_lag, max_lag)
+            data_new <- construct.data(model_history, serie, xregs, xreg_name, optimal_lag)
             
             # Ajuste del modelo de regresión dinámica con la nueva variable regresora
             ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
@@ -140,7 +145,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         if (show_info) {
             cat(paste0('Se ha añadido la variable regresora ', names(xregs)[best_xreg], ' [', ic, '=', best_ic, ']\n'))
             print(global_fit, row.names=F)
-            cat('----------------------------------------------------------------------------\n')
+            cat(paste0(stri_dup('-', PAD), '\n'))
         }
         
         # Se añade al historial del modelo la nueva variable añadida
@@ -155,7 +160,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     # modelo completo donde las innovaciones sigan un proceso ARMA
     if (!any(is.na(model_history))) {
         data_new <- construct.data(model_history, serie, xregs, new_xreg_name = NULL, 
-                                   optimal_lag = NULL, max_lag = max_lag)
+                                   optimal_lag = NULL)
         global_fit <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)],
                                      ic=ic, d=0, D=0, alpha=alpha, show_info=F)    
         
@@ -170,10 +175,13 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
                 warning(paste0('Se han aplicado ', ndiff, ' diferencias regulares'))
             }
             
-            cat('----------------------------------------------------------------------------\n')
-            cat(paste0('|           Histórico de variables añadidas al modelo (ndiff=', ndiff, ')            |\n'))
-            cat('----------------------------------------------------------------------------\n')           
+            cat(paste0(stri_dup('-', PAD), '\n'))
+            cat(paste0('|', 
+                       str_pad(paste0('Histórico de variables añadidas al modelo (ndiff=', ndiff, ')'), width=PAD-2, 
+                               side='both', pad=' '), '|\n'))
+            cat(paste0(stri_dup('-', PAD), '\n'))
             print(model_history, row.names=F)
+            cat(paste0(stri_dup('-', PAD), '\n'))
             print(global_fit, row.names=F)
             global_fit$ndiff <- ndiff
             global_fit$history <- model_history
@@ -182,18 +190,18 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     }
     
     
-    # Si el model_history está vacío  (es decir, no hay variables regresoras que 
+    # Si el model_history está vacío (es decir, no hay variables regresoras que 
     # aporten algo a la variable respuesta), o no se ha podido ajustar uno con 
     # errores ARMA, se trata de de:
     # a) Diferenciar todas las variables y volver a llamar a la función auto.fit.arima.regression
     # b) Si ndiff=2 no se recomienda diferenciar más y se ajusta un ARIMA sin regresoras
     if (ndiff < 3) {
-        cat(paste0('No se ha podido encontrar un modelo válido\n',
+        cat(paste0('No se ha podido encontrar un modelo válido con errores estacionarios\n',
             'Se aplica una diferenciación regular (ndiff=', ndiff+1, 
                        ') y se vuelve a llamar a la función\n'))
         
-        serie <- diff(serie)
-        xregs <- as.data.frame(lapply(xregs, diff))
+        serie <- diff(serie_original)
+        xregs <- as.data.frame(lapply(xregs_original, diff))
         return(
             auto.fit.arima.regression(serie, xregs, ic, alpha, stationary_method, 
                                       show_info, ndiff+1)
@@ -201,7 +209,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     }
     
     # En otro caso se intenta ajustar un ARIMA sin variables regresoras
-    global_fit <- auto.fit.arima(serie, seasonal=seasonal, ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
+    global_fit <- auto.fit.arima(serie, ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
     
     # En el caso de que tampoco haya un ARIMA válido sin regresoras
     if (!is_valid(global_fit)) {
@@ -211,13 +219,12 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     
     # En caso de que sí lo haya, se devuelve éste
     best_ic <- global_fit[[ic]]
-    
     if (show_info) {
-        cat('----------------------------------------------------------------------------\n')
+        cat(paste0(stri_dup('-', PAD), '\n'))
         cat(paste0('Modelo (sin variables regresoras cond ndiff=', ndiff, ') [', ic, '=', best_ic, ']\n'))
-        cat('----------------------------------------------------------------------------\n')
+        cat(paste0(stri_dup('-', PAD), '\n'))
         print(global_fit, row.names=F)
-        cat('----------------------------------------------------------------------------\n')
+        cat(paste0(stri_dup('-', PAD), '\n'))
     }
     global_fit$ndiff <- ndiff
     return(global_fit)
@@ -252,17 +259,16 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
 #' @returns Matriz con las variables retardadas y recortadas de forma adecuada para 
 #' introducir a la función de ajuste automático de ARIMAXs.
 #'
-construct.data <- function(model_history, serie, xregs, new_xreg_name, optimal_lag, max_lag) {
+construct.data <- function(model_history, serie, xregs, new_xreg_name, optimal_lag) {
     
     # Añadimos la nueva variable a introducir (si la hay)
     if (is.null(new_xreg_name)) {
         # si no hay una nueva variable, añadimos la variable respuesta
-        data <- cbind(serie=window(serie, start=start(serie)[1]+max_lag))
+        data <- cbind(serie)
     } else {
         # si la hay, la añadimos junto con la variable 
         new_xreg <- if (optimal_lag < 0) lag(xregs[[new_xreg_name]], optimal_lag) else xregs[[new_xreg_name]]
-        data <- cbind(serie=window(serie, start=start(serie)[1]+max_lag), 
-                      new_xreg_name=window(new_xreg, start=start(serie)[1]+max_lag))
+        data <- cbind(serie, new_xreg_name=window(new_xreg, start=start(serie)[1]))
         colnames(data) <- c('serie', new_xreg_name)
     }
 
@@ -272,7 +278,7 @@ construct.data <- function(model_history, serie, xregs, new_xreg_name, optimal_l
         for (j in 1:nrow(model_history)) {
             data <- cbind(data, 
                           window(lag(xregs[[model_history$var[j]]], as.integer(model_history$lag[j])), 
-                                 start=start(serie)+max_lag))
+                                 start=start(serie)))
         }
         colnames(data) <- c(prior_names, model_history$var)
     } 
@@ -341,7 +347,6 @@ select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto
     while (y_trend || x_trend) {
         serie <- diff(serie)
         xreg <- diff(xreg)
-        
         y_trend <- has_trend(serie, test=method, alpha=alpha)
         x_trend <- has_trend(xreg, test=method, alpha=alpha)
     }
@@ -394,6 +399,7 @@ select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto
     # En otro caso, se devuelve el retardo obtenido
     return(optimal_lag)
 }
+
 
 
 #' Obtención del retardo máximo (en valor absoluto) sobre un conjunto de variables 
