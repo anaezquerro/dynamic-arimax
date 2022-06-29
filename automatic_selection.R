@@ -64,12 +64,6 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     # con series del mismo tamaño
     max_lag <- get.maximum.lag(serie, xregs, alpha=alpha, method=stationary_method)
     
-    # Recortamos todas las series
-    serie_original <- serie; xregs_original <- xregs   # almacenamos las series originales
-    if (max_lag > 0) {
-        serie <- window(serie, start=start(serie)[1]+max_lag)
-        xregs <- as.data.frame(lapply(xregs, function(x) window(x, start=start(x)[1]+max_lag)))   
-    }
     response <- serie       # inicialmente, response = serie
     
     # Inicio del bucle para añadir variables regresoras
@@ -108,7 +102,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             
             # Creación de la matriz de tipo `ts` con la variable respuesta, variables 
             # regresoras anteriormente añadidas y nueva variable regresora
-            data_new <- construct.data(model_history, serie, xregs, xreg_name, optimal_lag)
+            data_new <- construct.data(model_history, serie, xregs, xreg_name, optimal_lag, max_lag)
             
             # Ajuste del modelo de regresión dinámica con la nueva variable regresora
             ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
@@ -160,7 +154,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     # modelo completo donde las innovaciones sigan un proceso ARMA
     if (!any(is.na(model_history))) {
         data_new <- construct.data(model_history, serie, xregs, new_xreg_name = NULL, 
-                                   optimal_lag = NULL)
+                                   optimal_lag = NULL, max_lag=max_lag)
         global_fit <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)],
                                      ic=ic, d=0, D=0, alpha=alpha, show_info=F)    
         
@@ -200,8 +194,8 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             'Se aplica una diferenciación regular (ndiff=', ndiff+1, 
                        ') y se vuelve a llamar a la función\n'))
         
-        serie <- diff(serie_original)
-        xregs <- as.data.frame(lapply(xregs_original, diff))
+        serie <- diff(serie)
+        xregs <- as.data.frame(lapply(xregs, diff))
         return(
             auto.fit.arima.regression(serie, xregs, ic, alpha, stationary_method, 
                                       show_info, ndiff+1)
@@ -259,33 +253,56 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
 #' @returns Matriz con las variables retardadas y recortadas de forma adecuada para 
 #' introducir a la función de ajuste automático de ARIMAXs.
 #'
-construct.data <- function(model_history, serie, xregs, new_xreg_name, optimal_lag) {
+construct.data <- function(model_history, serie, xregs, new_xreg_name, optimal_lag, max_lag) {
+    # Primero recortamos los primeros max_lag valores de la variable respuesta 
+    serie <- window(serie, start=add_t_start(serie, max_lag))
+    data <- cbind(serie)
     
-    # Añadimos la nueva variable a introducir (si la hay)
-    if (is.null(new_xreg_name)) {
-        # si no hay una nueva variable, añadimos la variable respuesta
-        data <- cbind(serie)
-    } else {
-        # si la hay, la añadimos junto con la variable 
-        new_xreg <- if (optimal_lag < 0) lag(xregs[[new_xreg_name]], optimal_lag) else xregs[[new_xreg_name]]
-        data <- cbind(serie, new_xreg_name=window(new_xreg, start=start(serie)[1]))
-        colnames(data) <- c('serie', new_xreg_name)
-    }
-
-    # Si hay más variables en el historial del modelo, las añadimos a data
+    # Si hay más variables en el historialdel modelo, las añadimos
     if (!all(is.na(model_history))) {
-        prior_names <- if (!is.null(ncol(data))) colnames(data) else c('serie')
         for (j in 1:nrow(model_history)) {
             data <- cbind(data, 
-                          window(lag(xregs[[model_history$var[j]]], as.integer(model_history$lag[j])), 
-                                 start=start(serie)))
+                    window(lag(xregs[[model_history$var[j]]], as.integer(model_history$lag[j])),
+                           start=start(serie), end=end(serie)))
         }
-        colnames(data) <- c(prior_names, model_history$var)
+        colnames(data) <- c('serie', model_history$var)
     } 
+    
+    if (!is.null(new_xreg_name)) {
+        new_xreg <- lag(xregs[[new_xreg_name]], optimal_lag)
+        data <- cbind(data, 
+                      window(new_xreg, start=start(serie), end=end(serie)))
+        
+        if (!all(is.na(model_history))) {
+            colnames(data) <- c('serie', model_history$var, new_xreg_name)
+        } else {  colnames(data) <- c('serie', new_xreg_name) }
+    }
     return(data)
 }
 
+add_t_start <- function(serie, t) {
+    if (frequency(serie) == 1) {
+        return( start(serie)[1] + t )
+    } else {
+        freq <- frequency(serie)
+        raw_start <- start(serie)[2] + t
+        return( 
+            c(start(serie)[1] + floor(raw_start/freq), t %% freq ) 
+        )
+    }
+}
 
+add_t_end <- function(serie, t) {
+    if (frequency(serie)==1) {
+        return(c(end(serie)[1] + t, 1))
+    } else {
+        freq <- frequency(serie)
+        raw_end <- end(serie)[2] + t
+        return(
+            c( end(serie)[1] + floor(raw_end/freq), raw_end%%freq)
+        )
+    }
+}
 
 #' Comprobación de la tendencia de una serie temporal
 #' 

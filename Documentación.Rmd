@@ -240,6 +240,7 @@ deaths_england <- ts(deaths$United.Kingdom, frequency=7)
 regresoras <- data.frame(confirmed_spain, recovered_spain)
 
 ajuste <- auto.fit.arima.regression(deaths_spain, regresoras)
+save(ajuste, file='ajuste covid.RData')
 ```
 
 
@@ -307,6 +308,14 @@ select.optimal.lag(serie, xreg, alpha=0.05, max_lag=NA)
 
 
 # Predicciones puntuales a horizonte $h$ e intervalos de confianza (`forecasting_model()` de `forecasting.R`)
+
+
+Una vez obtenido un ajuste del modelo de regresión dinámica, el objetivo es realizar predicciones a horizonte $h$ con sus correspondientes intervalos de predicción. Partiendo del objeto `Arima` obtenido de la función `auto.fit.arima.regression` (con información acerca de las variables introducidas y sus retardos y las diferenciaciones aplicadas para conseguir errores estacionarios).
+
+Para realizar predicciones a horizonte $h$ a partir de un modelo de regresión es necesario tener predicciones de los valores de las variables regresoras a ese mismo horizonte. Estos valores se pueden obtener a partir de:
+
+- En caso de que alguna variable haya sido introducida con cierto retardo, utilizar estos valores "sobrantes".
+- En caso de que el parámetro `max_lag` (que recorta la serie)
 
 **Descripción**: A partir del ajuste de un ARIMAX realiza predicciones puntuales a horizonte $h$ de cada variable regresora para introducirlas en las predicciones puntuales de la variable respuesta.
 

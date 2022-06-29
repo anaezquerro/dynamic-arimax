@@ -29,7 +29,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         
         # Creación de la matriz de tipo `ts` con la variables respuesta, variables 
         # regreosras anteriormente añadidas y nueva variable regresora
-        data_new <- construct.data(model_history, response, xregs, xreg_name, optimal_lag)
+        data_new <- construct.data(model_history, response, xregs, xreg_name, optimal_lag, max_lag)
         
         # Ajuste del modelo de regresión dinámica con la nueva variable regresora
         ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
@@ -68,11 +68,6 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     max_lag <- get.maximum.lag(serie, xregs, alpha=alpha, method=stationary_method)
     
     # Recortamos todas las series
-    serie_original <- serie; xregs_original <- xregs   # almacenamos las series originales
-    if (max_lag > 0) {
-        serie <- window(serie, start=start(serie)[1]+max_lag)
-        xregs <- as.data.frame(lapply(xregs, function(x) window(x, start=start(x)[1]+max_lag)))   
-    }
     response <- serie       # inicialmente, response = serie
     
     # Inicio del bucle para añadir variables regresoras
@@ -167,10 +162,10 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
                    ') y se vuelve a llamar a la función\n'))
         cat(paste0(stri_dup('-', PAD), '\n'))
         
-        serie <- diff(serie_original)
+        serie <- diff(serie)
         xregs <- as.data.frame(lapply(xregs, diff))
         return(
-            auto.fit.arima.regression(serie, xregs_original, ic, alpha, stationary_method, 
+            auto.fit.arima.regression(serie, xregs, ic, alpha, stationary_method, 
                                       show_info, ndiff+1)
         )
     }
