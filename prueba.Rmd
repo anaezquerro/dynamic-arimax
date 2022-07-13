@@ -1,0 +1,103 @@
+---
+title: "Simulación"
+author: "Ana Xiangning Pereira Ezquerro"
+date:  "Versión `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    number_sections: true
+    theme: paper
+    highlight: tango
+  bookdown::pdf_document2:
+    number_sections: yes
+    latex_engine: lualatex
+    fig_caption: yes
+    toc: yes
+    highlight: tango
+    df_print: kable
+    citation_package: biblatex
+  prettydoc::html_pretty:
+    toc: true
+    df_print: paged
+    number_sections: true
+    theme: hpstr
+    highlight: github
+fontsize: 12pt
+geometry: margin=0.7in
+classoption: a4paper
+documentclass: article
+header-includes:
+- \usepackage{sfmath}
+- \usepackage{csquotes}
+- \renewcommand*\familydefault{\sfdefault}
+- \renewcommand{\baselinestretch}{1.2}
+- \setlength{\parskip}{1em}
+- \input{confi.tex}
+- \renewcommand*\contentsname{Tabla de Contenidos}
+always_allow_html: yes
+bibliography: references.bib
+biblio-style: bwl-FU
+linkcitations: true
+linkcolor: blue
+lang: es
+---
+
+```{r, echo=F, warning=F, message=F}
+knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
+                      fig.height = 8, message=F, warning = F,
+                      comment='')
+eval(parse("arima_simulation.R", encoding="UTF-8"))
+eval(parse("auto_fit_arima.R", encoding="UTF-8"))
+eval(parse("automatic_selection.R", encoding="UTF-8"))
+eval(parse("forecasting.R", encoding="UTF-8"))
+eval(parse("parallel.R", encoding="UTF-8"))
+eval(parse("plot_tools.R", encoding='UTF-8'))
+
+# Librerías de series temporales
+library(fpp2)
+library(tseries)
+library(TSA)
+library(seastests)
+library(forecast)
+
+# Librerías para los gráficos
+library(plotly)
+library(forecast)
+
+# Auxiliares
+library(prettydoc)
+library(stringi)
+library(stringr)
+library(polynom)
+library(parallel)
+
+dir.create(file.path('figures'), showWarnings = FALSE)
+
+# Función para mostrar y guardar las gráficas de plotly
+display <- function(fig, name, width=800, height=400) {
+  
+  if (is.null(knitr::opts_knit$get("rmarkdown.pandoc.to"))) {
+    return(fig)
+  }
+  if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "latex") {
+    figpath <- paste0('figures/', name, ".pdf")
+    save_image(fig, figpath, width=width, height=height)
+    return(knitr::include_graphics(figpath))
+  }
+  if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "html") {
+    fig <- fig %>% layout(width=840, height=700)
+    return(fig)
+  }
+}
+```
+
+
+```{r}
+dat <- read.csv("data/evolucion_gripe_covid.csv")
+gripe <- ts(dat$sdgripal, start=c(2020, 40), frequency=52)
+result_gripe <- auto.fit.arima(gripe, plot_result = TRUE)
+result_gripe$fig_serie <- result_gripe$fig_serie %>% layout(width=840, height=700)
+result_gripe$fig_serie
+```

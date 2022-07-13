@@ -93,10 +93,8 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     # Cálculo del retardo óptimo máximo de cada variable regresora sobre la variable respuesta. 
     # Se utilizará posteriormente para recortar las series y poder comparar modelos construidos 
     # con series del mismo tamaño
-    max_lag <- get.maximum.lag()
-    
-    # Recortamos todas las series
     response <- serie       # inicialmente, response = serie
+    max_lag <- get.maximum.lag()
     
     # Inicio del bucle para añadir variables regresoras
     for (i in 1:ncol(xregs)) {
@@ -150,7 +148,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     # modelo completo donde las innovaciones sigan un proceso ARMA
     if (!any(is.na(model_history)) && (sum(global_fit$arma[6:7]) > 0)) {
         data_new <- construct.data(model_history, serie, xregs, new_xreg_name = NULL, 
-                                   optimal_lag = NULL)
+                                   optimal_lag = NULL, max_lag=max_lag)
         global_fit <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)],
                                      ic=ic, d=0, D=0, alpha=alpha, show_info=F)    
     }

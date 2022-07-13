@@ -3,12 +3,6 @@ title: "Documentación sobre autoajuste de modelos ARIMAX"
 author: "Ana Xiangning Pereira Ezquerro"
 date:  "Versión `r format(Sys.time(), '%d %B, %Y')`"
 output:
-  prettydoc::html_pretty:
-    toc: true
-    df_print: paged
-    number_sections: true
-    theme: hpstr
-    highlight: github
   pdf_document:
     number_sections: yes
     latex_engine: lualatex
@@ -22,8 +16,14 @@ output:
     toc_float: true
     df_print: paged
     number_sections: true
-    theme: hpstr
+    theme: paper
     highlight: tango
+  prettydoc::html_pretty:
+    toc: true
+    df_print: paged
+    number_sections: true
+    theme: hpstr
+    highlight: github
 fontsize: 12pt
 geometry: margin=0.7in
 classoption: a4paper
@@ -82,6 +82,7 @@ display <- function(fig, name, width=800, height=400) {
     return(knitr::include_graphics(figpath))
   }
   if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "html") {
+    fig <- fig %>% layout(width=840, height=700)
     return(fig)
   }
 }
