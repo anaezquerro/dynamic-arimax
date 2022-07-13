@@ -1,7 +1,7 @@
 
 
 
-forecast_model <- function(serie, xregs, ajuste, h, mode=c('bootstrap', 'norm'), levels=c(80, 90)) {
+forecast_model <- function(serie, xregs, ajuste, h, mode='bootstrap', levels=c(80, 90)) {
     if (class(xregs) != 'data.frame') { stop('El argumento `xregs` debe ser un data.frame') }
     if (!all(unlist(lapply(xregs, class)) == "ts")) {
         stop('Las variables regresoras del data.frame `xregs` deben ser de tipo ts')
@@ -18,37 +18,47 @@ forecast_model <- function(serie, xregs, ajuste, h, mode=c('bootstrap', 'norm'),
         }
     }
     
-    h_moment <- add_t_start(end(ajuste$x), h)
+    h_moment <- add_t_end(ajuste$x, h)
     xregs_pred <- matrix(NA, nrow=h, ncol=ncol(ajuste$xreg))
-    colnames(xregs_pred) <- colnames(ajuste$xreg)
+    colnames(xregs_pred) <- ajuste$history$var
     
     
     # Para cada variable regresora obtenemos predicciones puntuales (o bien las podemos 
     # sacar de los valores de la serie original)
-    for (xreg_name in colnames(ajuste$xreg)) {
+    for (xreg_name in ajuste$history$var) {
         if (mode == 'bootstrap') {bootst=T} else if (mode == 'norm') {bootst <- F}
         
+        xreg <- xregs[[xreg_name]]   # cogemos la variable completa
+        xreg_ajuste <- auto.fit.arima(xreg, show_info = F)
+        xreg_lag <- as.numeric(ajuste$history$lag[ajuste$history$var == xreg_name])
         
         # cabe la posibilidad de que ya tengamos valores en la serie original 
         # (pero que han sido recortados en el objeto ajuste)
-        if (moments_diff(end(xregs[[xreg_name]]), h_moment) >= 0) {
-            xregs_pred[[xreg_name]] <- window(xregs[[xreg_name]], start=end(ajuste$x), end=add_t_end(ajuste$x, h))
+        if (abs(xreg_lag) >= h) {
+            xregs_pred[, c(xreg_name)] <- xreg[(length(xreg) - h + 1):length(xreg)]
             next
         } 
           
-        xreg <- xregs[[xreg_name]]   # cogemos la variable completa
-        xreg_ajuste <- auto.fit.arima(xreg, show_info = F)
          
         if (!bootst && !is_norm(xreg_ajuste)) { bootst <- TRUE }
         
         # realizamos las suficientes predicciones a horizonte (h_moment- end(xreg)
         
-        xreg_pred <- forecast(xreg_ajuste, bootstrap=bootst, h=moments_diff(h_moment, end(xreg)))$mean
-        xregs_pred[[xreg_name]] <- xreg_pred
+        xreg_pred <- forecast(xreg_ajuste, bootstrap=bootst, h=(h + xreg_lag))$mean
+        
+        if (xreg_lag == 0) {
+            xregs_pred[, c(xreg_name)] <- xreg_pred
+        } else {
+            xregs_pred[, c(xreg_name)] <- c(xreg[(length(xreg) + xreg_lag + 1):length(xreg)], xreg_pred)
+        }
     }
     
     
     # Calculamos las predicciones
+    if (ncol(ajuste$xreg) == 1) {
+        colnames(xregs_pred) <- c('xreg')
+    }
+    
     preds <- forecast(ajuste, h=h, bootstrap=(!is_norm(ajuste) || (mode=="bootstrap")), 
                       xreg=xregs_pred, level=levels)
     return(preds)
@@ -57,7 +67,7 @@ forecast_model <- function(serie, xregs, ajuste, h, mode=c('bootstrap', 'norm'),
 
 moments_diff <- function(moment1, moment2, freq) {
     if (freq==1) {
-        return(moment1[1]-moment2[2])
+        return(moment1[1]-moment2[1])
     } else {
         return(
             (moment1[1]*freq + moment1[2]) - (moment2[1]*freq + moment2[2])

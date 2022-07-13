@@ -90,7 +90,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             }
             
             # Cálculo del retardo óptimo entre la variable regresora y la respuesta
-            optimal_lag <- select.optimal.lag(response, xreg, alpha=0.05, max_lag=max_lag, method=stationary_method)
+            optimal_lag <- select.optimal.lag(xreg, response, alpha=0.05, max_lag=max_lag, method=stationary_method)
                 
             
             # Si no hay retardo significativo, se pasa a evaluar la siguiente variable
@@ -338,9 +338,8 @@ has_trend <- function(x, test='auto.arima', alpha=0.05) {
 #' Selección del retardo óptimo (siempre menor o igual a 0) para una serie temporal y su 
 #' variable regresora. De forma opcional se puede fijar una magnitud máxima (`max_lag`) 
 #' del retardo a escoger.
-#' 
-#' @param serie Variable respuesta.
 #' @param xreg Variable regresora.
+#' @param serie Variable respuesta.
 #' @param alpha Nivel de significación para los contrastes de hipótesis de tendencia, 
 #' estacionalidad y significación.
 #' @param max_lag Magnitud máxima del retardo a escoger (filtrado de retardos).
@@ -351,7 +350,7 @@ has_trend <- function(x, test='auto.arima', alpha=0.05) {
 #' se devuelve `NA`.
 #' @export
 #'
-select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto.arima', less0=T) {
+select.optimal.lag <- function(xreg, serie, alpha=0.05, max_lag=NA, method='auto.arima', less0=T) {
     if (!method %in% c('auto.arima', 'adf.test')) {
         stop('El parámetro `method` debe ser "auto.arima" o "adf.test"')
     }
@@ -382,7 +381,10 @@ select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto
     }
     
     # Realizamos el preblanqueo de las serie con su variable regresora
-    series_prewhiten <- TSA::prewhiten(ts(xreg), ts(serie), plot=F)
+    if (any(is.na(xreg))) {
+        print(head(xreg))
+    }
+    series_prewhiten <- TSA::prewhiten(xreg, serie, plot=F)
     
     # Obtenemos del objeto resultante las correlaciones y los retardos menores o iguales que 0
     series_lags <- series_prewhiten$ccf$lag
@@ -408,7 +410,7 @@ select.optimal.lag <- function(serie, xreg, alpha=0.05, max_lag=NA, method='auto
     # Seleccionamos el retardo "más significativo" 
     optimal_lag <- series_lags[which.max(abs(series_acfs))]
     
-    # Si no se ha conseguido ningún retardo con estas condiciones, se devuleve NA
+    # Si no se ha conseguido ningún retardo con estas condiciones, se devuelve NA
     if (length(optimal_lag) == 0) {
         return(NA)
     }
@@ -444,7 +446,7 @@ get.maximum.lag <- function(serie, xregs, alpha=0.05, method='auto.arima') {
     
     for (i in 1:ncol(xregs)) {
         xreg <- xregs[, i]
-        optimal_lag <- select.optimal.lag(serie, xreg, alpha=alpha, method=method, less0=F)
+        optimal_lag <- select.optimal.lag(xreg, serie, alpha=alpha, method=method, less0=F)
         if (is.na(optimal_lag)) {
             next
         }

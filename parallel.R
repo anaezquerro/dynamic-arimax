@@ -3,7 +3,7 @@
 auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05, 
                                       stationary_method='auto.arima', show_info=T, 
                                       ndiff=0) {
-    
+
     display_results <- function(ajustes) {
         for (key in names(ajustes)) {
             if (typeof(ajustes[[key]]) == 'character') {
@@ -16,12 +16,27 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     }
     
     
+    get.maximum.lag <- function() {
+        
+        max_lag <- -Inf
+        
+        for (j in 1:ncol(xregs)) {
+            optimal_lag <- select.optimal.lag(xregs[, j], response, alpha=alpha, method=stationary_method, less0=F)
+            if (abs(optimal_lag) > max_lag) {
+                max_lag <- abs(optimal_lag)
+            }
+        }
+        return(max_lag)
+        
+    }    
+    
     fit.simple.regression <- function(j) {
+
         xreg <- xregs[, j]              # variable respuesta
         xreg_name <- names(xregs)[j]    # nombre de la variable respuesta
         
         # Obtención del retardo óptimo entre la variable regresora y la respuesta
-        optimal_lag <- select.optimal.lag(response, xreg, alpha=alpha, max_lag=max_lag, method=stationary_method)
+        optimal_lag <- select.optimal.lag(xreg, response, alpha=alpha, max_lag=max_lag, method=stationary_method)
         
         if (is.na(optimal_lag)) {
             return(paste0('No se ha podido encontrar un retardo significativo para ', xreg_name, '\n'))
@@ -29,7 +44,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         
         # Creación de la matriz de tipo `ts` con la variables respuesta, variables 
         # regreosras anteriormente añadidas y nueva variable regresora
-        data_new <- construct.data(model_history, response, xregs, xreg_name, optimal_lag, max_lag)
+        data_new <- construct.data(model_history, serie, xregs, xreg_name, optimal_lag, max_lag)
         
         # Ajuste del modelo de regresión dinámica con la nueva variable regresora
         ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
@@ -62,10 +77,23 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     best_ic <- Inf
     model_history <- data.frame(var=NA, lag=NA, ic=NA)
     
+    local_variables <- ls()
+    global_variables <- names(.GlobalEnv)
+    cl <- makeCluster(detectCores(logical=F))
+    clusterExport(cl, local_variables, envir=environment())
+    clusterExport(cl, global_variables)
+    clusterEvalQ(cl, library(fpp2))
+    clusterEvalQ(cl, library(tseries))
+    clusterEvalQ(cl, library(TSA))
+    clusterEvalQ(cl, library(seastests))
+    clusterEvalQ(cl, library(forecast))
+    clusterEvalQ(cl, library(stringi))
+    clusterEvalQ(cl, library(stringr))
+
     # Cálculo del retardo óptimo máximo de cada variable regresora sobre la variable respuesta. 
     # Se utilizará posteriormente para recortar las series y poder comparar modelos construidos 
     # con series del mismo tamaño
-    max_lag <- get.maximum.lag(serie, xregs, alpha=alpha, method=stationary_method)
+    max_lag <- get.maximum.lag()
     
     # Recortamos todas las series
     response <- serie       # inicialmente, response = serie
@@ -82,7 +110,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         xregs_list <- as.list(xregs_indexes)
         names(xregs_list) <- xregs_indexes
             
-        ajustes <- mclapply(xregs_list, fit.simple.regression, mc.cores=detectCores(logical=F))
+        ajustes <- parLapply(cl, xregs_list, fit.simple.regression)
         if (show_info) { display_results(ajustes) }
         
 
@@ -115,6 +143,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         # La "respuesta" pasa a ser los residuos del ajuste
         response <- residuals(global_fit, type='regression')
     }
+    stopCluster(cl)
     
     
     # Si ya no entran más variables (y ha entrado al menos una) se ajusta el 
