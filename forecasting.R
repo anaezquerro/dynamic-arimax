@@ -1,34 +1,60 @@
 
 
 
+#' Predicciones puntuales a horizonte $h$ e intervalos de predicción en base a 
+#' un modelo de regresión dinámica.
+#' 
+#' @param serie [`ts`] Serie de tiempo que funciona como variable respuesta. 
+#' Debe ser la serie original que se utilizó para la selección de variables 
+#' regresoras.
+#' @param xregs [`mts`] Conjunto original de todas las variables regresoras. 
+#' @param ajuste [`Arima`] Ajuste del modelo de regresión dinámica obtenido y 
+#' sobre el que se hacen las predicciones puntuales e intervalos de predicción.
+#' @param h [`numeric`] Valor horizonte de las predicciones.
+#' @param mode [`character`] Modo de realizar los intervalos de predicción: 
+#' basados en normalidad sobre los residuos (`norm`) o a través de bootstrap 
+#' (`bootstrap`). Por defecto se realizan a través de bootstrap.
+#' @param levels [`vector`] Vector numérico de los niveles a los que se quieren 
+#' hacer los intervalos de predicción.
+#' 
+#' @returns Predicciones puntuales e intervalos de confianza en unidades 
+#' originales.
+#' 
 forecast_model <- function(serie, xregs, ajuste, h, mode='bootstrap', levels=c(80, 90)) {
-    if (class(xregs) != 'data.frame') { stop('El argumento `xregs` debe ser un data.frame') }
-    if (!all(unlist(lapply(xregs, class)) == "ts")) {
-        stop('Las variables regresoras del data.frame `xregs` deben ser de tipo ts')
+    
+    # Comprobación de los parámetros     
+    if (!any(c('mts', 'ts') %in% class(xregs))) {
+        stop('El argumento `xregs` debe ser de tipo mts o ts')
     }
-    if (class(serie) != 'ts') { stop('El argumento `serie` debe ser de tipo ts') }
+    if (class(serie) != 'ts') {
+        stop('El arguemnto `serie` debe ser de tipo ts')
+    }
     if (class(mode) != 'character') {stop('Argumento `mode` debe ser una cadena de caracteres')}
     if (!(mode %in% c('bootstrap', 'norm'))) {stop('Modo no válido')}
     
-    serie_original <- serie; xregs_original <- xregs
+    
+    # Si el ajuste se realizado con los datos diferenciados, es necesario 
+    # diferenciarlos los originales también (aunque se guardan sin diferenciar)
+    
+    serie_original <- serie; xregs_original <- xregs  # datos sin diferenciar
+    
     if (ajuste$ndiff > 0) {
-        for (i in 1:ajuste$ndiff) {
-            serie <- diff(serie)
-            xregs <- as.data.frame(lapply(xregs, diff))
-        }
+        serie <- mul_diff(serie, ajuste$ndiff)
+        xregs <- mul_diff(xregs, ajuste$ndiff)
     }
     
-    h_moment <- add_t_end(ajuste$x, h)
+    # Matriz donde se guardarán las predicciones a horizonte h de las variables 
+    # regresoras
     xregs_pred <- matrix(NA, nrow=h, ncol=ncol(ajuste$xreg))
     colnames(xregs_pred) <- ajuste$history$var
     
     
-    # Para cada variable regresora obtenemos predicciones puntuales (o bien las podemos 
-    # sacar de los valores de la serie original)
+    # Para cada variable regresora obtenemos predicciones puntuales (o bien las 
+    # podemos sacar de los valores de la serie original)
     for (xreg_name in ajuste$history$var) {
         if (mode == 'bootstrap') {bootst=T} else if (mode == 'norm') {bootst <- F}
         
-        xreg <- xregs[[xreg_name]]   # cogemos la variable completa
+        xreg <- xregs[, c(xreg_name)]   # cogemos la variable completa
         xreg_ajuste <- auto.fit.arima(xreg, show_info = F)
         xreg_lag <- as.numeric(ajuste$history$lag[ajuste$history$var == xreg_name])
         
@@ -42,8 +68,8 @@ forecast_model <- function(serie, xregs, ajuste, h, mode='bootstrap', levels=c(8
          
         if (!bootst && !is_norm(xreg_ajuste)) { bootst <- TRUE }
         
-        # realizamos las suficientes predicciones a horizonte (h_moment- end(xreg)
-        
+        # realizamos las suficientes predicciones a horizonte h
+
         xreg_pred <- forecast(xreg_ajuste, bootstrap=bootst, h=(h + xreg_lag))$mean
         
         if (xreg_lag == 0) {
@@ -53,29 +79,47 @@ forecast_model <- function(serie, xregs, ajuste, h, mode='bootstrap', levels=c(8
         }
     }
     
-    
-    # Calculamos las predicciones
+    # Si sólo hay una variable regresora es necesario renombrarla para utilizarla 
+    # con la función `forecast()`
     if (ncol(ajuste$xreg) == 1) {
         colnames(xregs_pred) <- c('xreg')
     }
     
+    # Realizamos las predicciones
     preds <- forecast(ajuste, h=h, bootstrap=(!is_norm(ajuste) || (mode=="bootstrap")), 
                       xreg=xregs_pred, level=levels)
-    return(preds)
     
-}
-
-moments_diff <- function(moment1, moment2, freq) {
-    if (freq==1) {
-        return(moment1[1]-moment2[1])
-    } else {
-        return(
-            (moment1[1]*freq + moment1[2]) - (moment2[1]*freq + moment2[2])
-        )
+    
+    # Si se han aplicado diferenciaciones, pasamos las predicciones y los 
+    # intervalos de predicción a unidades originales (con los datos originales 
+    # sin diferenciar que se habían guardado)
+    if (ajuste$ndiff > 0) {
+        cat('Se devuelven las predicciones en unidades originales...\n')
+        apply_undiff <- function(x) {
+            return(
+                mul_undiff(ts(c(serie, x), start=start(serie)), 
+                           previous=window(serie_original, 
+                                           start=substract_t(start(serie), ajuste$ndiff, frequency(serie)),
+                                           end=substract_t(start(serie), 1, frequency(serie))),
+                           ajuste$ndiff)
+        )}
+        
+        
+        serie_mean <- apply_undiff(preds$mean)
+        serie_lower <- ts(as.matrix(apply(preds$lower, 2, apply_undiff)), start=start(serie_original))
+        serie_upper <- ts(as.matrix(apply(preds$upper, 2, apply_undiff)), start=start(serie_original))
+        
+        preds$mean <- window(serie_mean, start=start(preds$mean), end=end(preds$mean))
+        preds$lower <- window(serie_lower, start=start(preds$lower))
+        preds$upper <- window(serie_upper, start=start(preds$upper))
+        preds$x <- window(serie_mean, start=start(preds$x), end=end(preds$x))
     }
+    
+    return(preds)
 }
 
 
+# Función auxiliar para comprobar si los residuos de un ajuste son normales
 is_norm <- function(ajuste, alpha=0.05) {
     testJB <- jarque.bera.test(ajuste$residuals[!is.na(ajuste$residuals)])$p.value
     testSW <- shapiro.test(ajuste$residuals)$p.value
@@ -85,6 +129,48 @@ is_norm <- function(ajuste, alpha=0.05) {
     }
     return(TRUE)
 } 
+
+# Función auxiliar para realizar el proceso "inverso" de diferenciar (partiendo 
+# de que se cuenta con el primer valor de la serie de tiempo que se "perdió" 
+# en la diferenciación).
+undiff <- function(x, previous) {
+    
+    if (class(x) != 'ts') {stop('El objeto x debe ser de tipo ts')}
+    
+    x_undiff <- rep(NA, length(x) + 1)
+    x_undiff[1] <- previous
+    
+    for (i in 2:length(x_undiff)) {
+        x_undiff[i] <- x_undiff[i-1] + x[i-1]
+    }
+    
+    return(ts(x_undiff, end=end(x)))
+}
+
+# Función auxiliar que aplicar el "undiff" de múltiples diferenciaciones 
+mul_undiff <- function(x, previous, ndiff) {
+    if (class(x) != 'ts') {stop('El objeto x debe ser de tipo ts')}
+    if (length(previous) != ndiff) {stop('No hay datos suficientes')}
+    
+    
+    # si ndiff==1 se puede utilizar directamente la función simple
+    if (ndiff == 1) {
+        return(undiff(x, previous))
+    }
+    
+    return(mul_undiff(undiff(x, mul_diff(previous, ndiff-1)), previous[1:(ndiff-1)], ndiff-1))
+    
+}
+
+
+# Función auxiliar para aplicar múltiples diferenciaciones regulares
+mul_diff <- function(x, ndiff) {
+    x_diff <- x
+    for (i in 1:ndiff) {
+        x_diff <- diff(x_diff)
+    }
+    return(x_diff)
+}
 
 
 plot_forecast <- function(preds, rang=NULL) {
@@ -112,7 +198,7 @@ plot_forecast <- function(preds, rang=NULL) {
                       fill='tonexty', fillcolor=colors[i], showlegend=F)
         
     }
-    fig <- fig %>% add_trace(x=time(preds$mean), y=preds$mean, line=list(color='grey'),
+    fig <- fig %>% add_trace(x=time(preds$mean), y=preds$mean, line=list(color='#2F63D4'),
                      name='predicciones puntuales', showlegend=T)
     
     return(fig)

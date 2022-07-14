@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.15.0 (MiKTeX 22.3) (format=lualatex 2022.6.13)  13 JUL 2022 09:19
+This is LuaHBTeX, Version 1.15.0 (MiKTeX 22.3) (format=lualatex 2022.6.13)  14 JUL 2022 00:51
  restricted system commands enabled.
 **Documentación.tex
 (./Documentación.tex
@@ -1494,331 +1494,272 @@ LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <12> not available
 
 {C:/Users/Usuario/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}]
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <17.28> not available
-(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 147.
+(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 146.
 
-Overfull \hbox (8.04118pt too wide) in paragraph at lines 147--147
+Overfull \hbox (15.28911pt too wide) in paragraph at lines 146--146
 |[]\TU/lmss/bx/n/17.28 Fun-ción de auto-ajuste de mo-de-los ARI-MAX (\TU/lmtt/
-b/n/17.28 auto.fit.arima
+b/n/17.28 auto.fit.arima\TU/lmss/bx/n/17.28 )| 
  []
 
 [2]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 298--298
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 297--297
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 298--298
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 297--297
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 298--298
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 297--297
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 298--298
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 297--297
 []\TU/lmtt/m/n/10.95 |                                      MODELO FINAL       
                                |[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 298--298
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 297--297
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
-<figures/serie gripe.pdf, id=47, 752.8125pt x 602.25pt>
+<figures/serie gripe.pdf, id=48, 752.8125pt x 602.25pt>
 File: figures/serie gripe.pdf Graphic file (type pdf)
 <use figures/serie gripe.pdf>
-Package luatex.def Info: figures/serie gripe.pdf  used on input line 306.
+Package luatex.def Info: figures/serie gripe.pdf  used on input line 305.
 (luatex.def)             Requested size: 496.34087pt x 397.0727pt.
 [3]
-<figures/residuals gripe.pdf, id=52, 752.8125pt x 602.25pt>
+<figures/residuals gripe.pdf, id=53, 752.8125pt x 602.25pt>
 File: figures/residuals gripe.pdf Graphic file (type pdf)
 <use figures/residuals gripe.pdf>
-Package luatex.def Info: figures/residuals gripe.pdf  used on input line 314.
+Package luatex.def Info: figures/residuals gripe.pdf  used on input line 313.
 (luatex.def)             Requested size: 496.34087pt x 397.0727pt.
 [4<./figures/serie gripe.pdf>]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 370--370
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 369--369
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 370--370
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 369--369
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 370--370
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 369--369
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 [5<./figures/residuals gripe.pdf>]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 370--370
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 369--369
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 370--370
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 369--369
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 370--370
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 369--369
 []\TU/lmtt/m/n/10.95 |                                      MODELO FINAL       
                                |[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 370--370
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 369--369
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
-<figures/serie co2.pdf, id=83, 752.8125pt x 602.25pt>
+<figures/serie co2.pdf, id=84, 752.8125pt x 602.25pt>
 File: figures/serie co2.pdf Graphic file (type pdf)
 <use figures/serie co2.pdf>
-Package luatex.def Info: figures/serie co2.pdf  used on input line 378.
+Package luatex.def Info: figures/serie co2.pdf  used on input line 377.
 (luatex.def)             Requested size: 496.34087pt x 397.0727pt.
 [6]
-<figures/residuals co2.pdf, id=88, 752.8125pt x 602.25pt>
+<figures/residuals co2.pdf, id=89, 752.8125pt x 602.25pt>
 File: figures/residuals co2.pdf Graphic file (type pdf)
 <use figures/residuals co2.pdf>
-Package luatex.def Info: figures/residuals co2.pdf  used on input line 386.
+Package luatex.def Info: figures/residuals co2.pdf  used on input line 385.
 (luatex.def)             Requested size: 496.34087pt x 397.0727pt.
 [7<./figures/serie co2.pdf>] [8<./figures/residuals co2.pdf>] [9]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 530--530
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 529--529
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 530--530
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 529--529
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 530--530
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 529--529
 []\TU/lmtt/m/n/10.95 |                  Histórico de variables añadidas al mod
 elo (ndiff=0)                   |[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 530--530
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 529--529
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 530--530
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 529--529
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
- []
-
-
-Underfull \vbox (badness 10000) detected at line 546
- []
-
-
-Overfull \vbox (2.46391pt too high) detected at line 546
  []
 
 [10]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 604--604
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 596--596
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 604--604
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 596--596
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 604--604
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 596--596
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 604--604
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 596--596
 []\TU/lmtt/m/n/10.95 |                  Histórico de variables añadidas al mod
 elo (ndiff=0)                   |[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 604--604
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 596--596
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 604--604
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 596--596
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 [11]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 644--644
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 668--668
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 644--644
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 668--668
+[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
+-------------------------------[] 
+ []
+
+
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 668--668
 []\TU/lmtt/m/n/10.95 |                  Histórico de variables añadidas al mod
 elo (ndiff=0)                   |[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 644--644
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 668--668
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 644--644
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 668--668
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
-[12]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 770--770
-[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
--------------------------------[] 
- []
-
-
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 770--770
-[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
--------------------------------[] 
- []
-
-
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 770--770
-[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
--------------------------------[] 
- []
-
-[13]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 770--770
-[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
--------------------------------[] 
- []
-
-
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 770--770
-[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
--------------------------------[] 
- []
-
-
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 770--770
-[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
--------------------------------[] 
- []
-
-
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 770--770
-[]\TU/lmtt/m/n/10.95 |                  Histórico de variables añadidas al mod
-elo (ndiff=1)                   |[] 
- []
-
-
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 770--770
-[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
--------------------------------[] 
- []
-
-
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 770--770
-[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
--------------------------------[] 
- []
-
-[14]
+[12] [13]
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <14.4> not available
-(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 786.
-
-Overfull \hbox (66.14677pt too wide) in paragraph at lines 874--874
-|[]\TU/lmss/bx/n/14.4 Se-lec-ción del re-tar-do óp-ti-mo (\TU/lmtt/b/n/14.4 se
-lect.optimal.lag() \TU/lmss/bx/n/14.4 de \TU/lmtt/b/n/14.4 automatic_selection.R
-\TU/lmss/bx/n/14.4 )| 
- []
-
-[15] [16]
+(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 683.
+[14] [15]
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(1)/m/n' will be
-(Font)              scaled to size 17.80127pt on input line 925.
+(Font)              scaled to size 17.80127pt on input line 821.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(2)/m/n' will be
-(Font)              scaled to size 17.80286pt on input line 925.
+(Font)              scaled to size 17.80286pt on input line 821.
 LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(3)/m/n' will be
-(Font)              scaled to size 17.79942pt on input line 925.
-[17]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1037--1037
+(Font)              scaled to size 17.79942pt on input line 821.
+
+Underfull \vbox (badness 10000) detected at line 906
+ []
+
+[16]
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 940--940
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1037--1037
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 940--940
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1037--1037
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 940--940
 []\TU/lmtt/m/n/10.95 |                  Histórico de variables añadidas al mod
 elo (ndiff=0)                   |[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1037--1037
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 940--940
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1037--1037
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 940--940
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
-<figures/preds_patatas.pdf, id=167, 602.25pt x 301.125pt>
+<figures/preds_patatas.pdf, id=164, 602.25pt x 301.125pt>
 File: figures/preds_patatas.pdf Graphic file (type pdf)
 <use figures/preds_patatas.pdf>
-Package luatex.def Info: figures/preds_patatas.pdf  used on input line 1047.
+Package luatex.def Info: figures/preds_patatas.pdf  used on input line 950.
 (luatex.def)             Requested size: 496.34776pt x 248.17387pt.
-[18<./figures/preds_patatas.pdf>]
-Overfull \hbox (38.30331pt too wide) in paragraph at lines 1107--1107
+[17] [18<./figures/preds_patatas.pdf>]
+Overfull \hbox (38.30331pt too wide) in paragraph at lines 1010--1010
 [] \TU/lmtt/m/n/10.95 $ pob514              : int  14270 14270 14270 14270 14262
  14268 14266 14248 14242 14235 ...[] 
  []
 
 
-Overfull \hbox (38.30331pt too wide) in paragraph at lines 1107--1107
+Overfull \hbox (38.30331pt too wide) in paragraph at lines 1010--1010
 [] \TU/lmtt/m/n/10.95 $ pob1544             : int  18428 18428 18428 18428 18431
  18402 18386 18334 18328 18311 ...[] 
  []
 
 
-Overfull \hbox (38.30331pt too wide) in paragraph at lines 1107--1107
+Overfull \hbox (38.30331pt too wide) in paragraph at lines 1010--1010
 [] \TU/lmtt/m/n/10.95 $ pob4564             : int  13825 13825 13825 13825 13841
  13848 13854 13816 13817 13821 ...[] 
  []
 
 
-Overfull \hbox (38.30331pt too wide) in paragraph at lines 1107--1107
+Overfull \hbox (38.30331pt too wide) in paragraph at lines 1010--1010
 [] \TU/lmtt/m/n/10.95 $ pob                 : int  60964 60964 60964 60964 60973
  60951 60946 60816 60800 60780 ...[] 
  []
@@ -1826,59 +1767,59 @@ Overfull \hbox (38.30331pt too wide) in paragraph at lines 1107--1107
 [19]
 File: figures/serie gripe.pdf Graphic file (type pdf)
 <use figures/serie gripe.pdf>
-Package luatex.def Info: figures/serie gripe.pdf  used on input line 1143.
+Package luatex.def Info: figures/serie gripe.pdf  used on input line 1046.
 (luatex.def)             Requested size: 496.34087pt x 397.0727pt.
 [20] [21]
-<Documentación_files/figure-latex/unnamed-chunk-22-1.pdf, id=199, 722.7pt x 57
+<Documentación_files/figure-latex/unnamed-chunk-20-1.pdf, id=200, 722.7pt x 57
 8.16pt>
-File: Documentación_files/figure-latex/unnamed-chunk-22-1.pdf Graphic file (ty
+File: Documentación_files/figure-latex/unnamed-chunk-20-1.pdf Graphic file (ty
 pe pdf)
-<use Documentación_files/figure-latex/unnamed-chunk-22-1.pdf>
-Package luatex.def Info: Documentación_files/figure-latex/unnamed-chunk-22-1.p
-df  used on input line 1249.
+<use Documentación_files/figure-latex/unnamed-chunk-20-1.pdf>
+Package luatex.def Info: Documentación_files/figure-latex/unnamed-chunk-20-1.p
+df  used on input line 1152.
 (luatex.def)             Requested size: 496.33673pt x 397.06938pt.
-[22<./Documentación_files/figure-latex/unnamed-chunk-22-1.pdf>]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1325--1325
+[22<./Documentación_files/figure-latex/unnamed-chunk-20-1.pdf>]
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 1228--1228
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1325--1325
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 1228--1228
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1325--1325
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 1228--1228
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1325--1325
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 1228--1228
 []\TU/lmtt/m/n/10.95 |                                      MODELO FINAL       
                                |[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 1325--1325
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 1228--1228
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 [23]
 LaTeX Font Info:    Font shape `TU/lmss/bx/it' in size <14.4> not available
-(Font)              Font shape `TU/lmss/bx/sl' tried instead on input line 1334
+(Font)              Font shape `TU/lmss/bx/sl' tried instead on input line 1237
 .
 
-Overfull \hbox (72.7958pt too wide) in paragraph at lines 1355--1355
+Overfull \hbox (72.7958pt too wide) in paragraph at lines 1258--1258
 [] \TU/lmtt/m/n/10.95 $ Date  : chr  "4/1/2015 16:00:00" "4/2/2015 16:00:00" "4/
 6/2015 16:00:00" "4/7/2015 16:00:00" ...[] 
  []
 
 
-Overfull \hbox (130.2833pt too wide) in paragraph at lines 1355--1355
+Overfull \hbox (130.2833pt too wide) in paragraph at lines 1258--1258
 [] \TU/lmtt/m/n/10.95 $ Volume: int  36865322 37487476 39223692 28809375 2475343
 8 25723861 28022002 30276692 24244382 27343581 ...[] 
  []
@@ -1891,49 +1832,97 @@ ern Roman (RS)
 ) [24
 Missing character: There is no ḿ (U+1E3F) in font [lmsans12-regular]:+tlig;!
 ]
-<figures/fig-open0.pdf, id=220, 752.8125pt x 602.25pt>
+<figures/fig-open0.pdf, id=221, 752.8125pt x 602.25pt>
 File: figures/fig-open0.pdf Graphic file (type pdf)
 <use figures/fig-open0.pdf>
-Package luatex.def Info: figures/fig-open0.pdf  used on input line 1460.
+Package luatex.def Info: figures/fig-open0.pdf  used on input line 1363.
 (luatex.def)             Requested size: 496.34087pt x 397.0727pt.
 [25] [26<./figures/fig-open0.pdf>]
-<figures/fig-high0.pdf, id=236, 752.8125pt x 602.25pt>
+<figures/fig-high0.pdf, id=237, 752.8125pt x 602.25pt>
 File: figures/fig-high0.pdf Graphic file (type pdf)
 <use figures/fig-high0.pdf>
-Package luatex.def Info: figures/fig-high0.pdf  used on input line 1540.
+Package luatex.def Info: figures/fig-high0.pdf  used on input line 1443.
 (luatex.def)             Requested size: 496.34087pt x 397.0727pt.
 [27] [28<./figures/fig-high0.pdf>]
-<figures/fig-low0.pdf, id=252, 752.8125pt x 602.25pt>
+<figures/fig-low0.pdf, id=253, 752.8125pt x 602.25pt>
 File: figures/fig-low0.pdf Graphic file (type pdf)
 <use figures/fig-low0.pdf>
-Package luatex.def Info: figures/fig-low0.pdf  used on input line 1612.
+Package luatex.def Info: figures/fig-low0.pdf  used on input line 1515.
 (luatex.def)             Requested size: 496.34087pt x 397.0727pt.
 [29<./figures/fig-low0.pdf>]
-<figures/fig-volume0.pdf, id=264, 752.8125pt x 602.25pt>
+<figures/fig-volume0.pdf, id=265, 752.8125pt x 602.25pt>
 File: figures/fig-volume0.pdf Graphic file (type pdf)
 <use figures/fig-volume0.pdf>
-Package luatex.def Info: figures/fig-volume0.pdf  used on input line 1684.
+Package luatex.def Info: figures/fig-volume0.pdf  used on input line 1587.
 (luatex.def)             Requested size: 496.34087pt x 397.0727pt.
 [30] [31<./figures/fig-volume0.pdf>]
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <10.95> not available
-(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 1725.
+(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 1628.
 [32]
-Overfull \vbox (1.43152pt too high) detected at line 1883
+Overfull \vbox (1.43152pt too high) detected at line 1786
  []
 
 [33] [34] [35] [36] [37] [38]
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 2331--2331
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2233--2233
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
-Overfull \hbox (21.05707pt too wide) in paragraph at lines 2331--2331
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2233--2233
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
  []
 
 
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2233--2233
+[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
+-------------------------------[] 
+ []
+
+
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2233--2233
+[]\TU/lmtt/m/n/10.95 |                  Histórico de variables añadidas al mod
+elo (ndiff=0)                   |[] 
+ []
+
+
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2233--2233
+[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
+-------------------------------[] 
+ []
+
+
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2233--2233
+[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
+-------------------------------[] 
+ []
+
+[39]
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2289--2289
+[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
+-------------------------------[] 
+ []
+
+
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2289--2289
+[]\TU/lmtt/m/n/10.95 |                  Histórico de variables añadidas al mod
+elo (ndiff=0)                   |[] 
+ []
+
+
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2289--2289
+[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
+-------------------------------[] 
+ []
+
+
+Overfull \hbox (21.05707pt too wide) in paragraph at lines 2289--2289
+[]\TU/lmtt/m/n/10.95 -----------------------------------------------------------
+-------------------------------[] 
+ []
+
+[40]
 Overfull \hbox (21.05707pt too wide) in paragraph at lines 2331--2331
 []\TU/lmtt/m/n/10.95 -----------------------------------------------------------
 -------------------------------[] 
@@ -1957,24 +1946,24 @@ Overfull \hbox (21.05707pt too wide) in paragraph at lines 2331--2331
 -------------------------------[] 
  []
 
-[39] [40] (./Documentación.aux)
+[41] (./Documentación.aux)
 Package logreq Info: Writing requests to 'Documentación.run.xml'.
 
 \openout1 = Documentación.run.xml
 )
 
 Here is how much of LuaTeX's memory you used:
- 30243 strings out of 477742
+ 30248 strings out of 477742
  125086,1648299 words of node,token memory allocated
- 742 words of node memory still in use:
-   8 hlist, 2 vlist, 2 rule, 1 local_par, 6 glue, 4 kern, 1 penalty, 3 glyph, 41
- attribute, 67 glue_spec, 17 attribute_list, 1 write, 1 user_defined, 3 pdf_acti
+ 728 words of node memory still in use:
+   8 hlist, 2 vlist, 2 rule, 1 local_par, 6 glue, 4 kern, 1 penalty, 3 glyph, 38
+ attribute, 67 glue_spec, 16 attribute_list, 1 write, 1 user_defined, 2 pdf_acti
 on nodes
-   avail lists: 1:2,2:2158,3:1855,4:532,5:1037,6:128,7:6870,8:43,9:388,10:17,11:
-716
- 49900 multiletter control sequences out of 65536+600000
- 102 fonts using 24810887 bytes
- 86i,6n,121p,1662b,1817s stack positions out of 10000i,1000n,20000p,200000b,80000s
+   avail lists: 1:2,2:2158,3:1855,4:532,5:1041,6:118,7:6870,8:43,9:368,10:17,11:
+739
+ 49902 multiletter control sequences out of 65536+600000
+ 102 fonts using 24810799 bytes
+ 86i,6n,121p,1394b,1817s stack positions out of 10000i,1000n,20000p,200000b,80000s
 <//?/c:/users/usuario/appdata/local/programs/miktex/fonts/opentype/public/lm-mat
 h/latinmodern-math.otf><//?/c:/users/usuario/appdata/local/programs/miktex/fonts
 /opentype/public/lm/lmroman12-regular.otf><//?/c:/users/usuario/appdata/local/pr
@@ -1990,9 +1979,9 @@ olt10-bold.otf><//?/c:/users/usuario/appdata/local/programs/miktex/fonts/opentyp
 e/public/lm/lmsans10-bold.otf><//?/c:/users/usuario/appdata/local/programs/mikte
 x/fonts/opentype/public/lm/lmsans12-regular.otf><//?/c:/users/usuario/appdata/lo
 cal/programs/miktex/fonts/opentype/public/lm/lmsans17-regular.otf>
-Output written on Documentación.pdf (40 pages, 347486 bytes).
+Output written on Documentación.pdf (41 pages, 348032 bytes).
 
-PDF statistics: 427 PDF objects out of 1000 (max. 8388607)
- 67 named destinations out of 1000 (max. 131072)
- 81 words of extra memory for PDF output out of 10000 (max. 100000000)
+PDF statistics: 437 PDF objects out of 1000 (max. 8388607)
+ 70 named destinations out of 1000 (max. 131072)
+ 89 words of extra memory for PDF output out of 10000 (max. 100000000)
 
