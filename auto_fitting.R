@@ -165,7 +165,7 @@ get_orders <- function(ajuste) {
   d <- ajuste$arma[6]
   D <- ajuste$arma[7]
   
-  include_mean <- any(c('mean', 'drift') %in% names(ajuste$coef))
+  include_mean <- any(c('mean', 'drift', 'intercept') %in% names(ajuste$coef))
   orders <- list(regular=c(p, d, q), seasonal=c(P, D, Q), include_mean=include_mean)
   return(orders)
 }
@@ -191,7 +191,7 @@ update_orders <- function(ajuste, fixed) {
         }
     }
     
-    if (any(str_detect(remov_coefs, 'mean|drift')) ) {
+    if (any(str_detect(remov_coefs, 'mean|drift|intercept')) ) {
         include_mean <- FALSE
         if (sum(arma_orders, 2) <= length(fixed)) {
             new_fixed <- c(new_fixed, fixed[sum(arma_orders,2):length(fixed)])
@@ -237,7 +237,7 @@ get_arma_coefs_names <- function(ajuste) {
   }
   
   # Obtenemos la máscara de los coeficientes ARMA
-  arma_coefs_mask <- sapply(names(ajuste$coef), str_detect, pattern=c('s?ma\\d+', 's?ar\\d+', 'mean', 'drift'))
+  arma_coefs_mask <- sapply(names(ajuste$coef), str_detect, pattern=c('s?ma\\d+', 's?ar\\d+', 'mean', 'drift', 'intercept'))
   
   # En caso de que la máscara esté vacía esto indica que el modelo es un ARIMA(0, 0, 0)
   if (length(arma_coefs_mask) == 0) { return(NULL) }

@@ -110,11 +110,13 @@ $$Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \beta_2 X_{t-r_2}^{(2)} + \cdots + X
 
 Supongamos un modelo de regresión dinámica de tres variables regresoras donde todos los retardos son igual a cero. En concreto, nuestro modelo tendrá la forma:
 
-$$ Y_t = \beta_0 + \beta_1 X_t^{(1)} + \beta_2 X_t^{(2)} + \beta_3 X_t^{(3)} + \eta_t$$
+\begin{equation}\label{eq:ejemplo1}
+    Y_t = \beta_0 + \beta_1 X_t^{(1)} + \beta_2 X_t^{(2)} + \beta_3 X_t^{(3)} + \eta_t
+\end{equation}
 
 donde:
 
--   $\eta_t \sim$ ARMA(2,1), por tanto, las innovaciones son estacionarias.
+-   $\eta_t \sim$ ARMA(2,1), por tanto, los errores son estacionarios.
 -   $X_t^{(1)} \sim$ ARIMA(2, 1, 3) y su coeficiente $\beta_1 = 2.8$.
 -   $X_t^{(2)} \sim$ ARIMA(1, 1, 2) y su coeficiente $\beta_2 = -1.12$.
 -   $X_t^{(3)} \sim$ ARMA(1, 2) y su coeficiente $\beta_3 = -2.3$.
@@ -131,7 +133,7 @@ Supongamos otro conjunto de variables (que siguen también un proceso ARIMA) que
 load(file='simulations/X1 ~ ARIMA(2,1,3).RData')        # X1
 load(file='simulations/X2 ~ ARIMA(1,1,2).RData')        # X2
 load(file='simulations/X3 ~ ARIMA(1,0,2).RData')        # X3
-load(file='simulations/residuals ~ ARIMA(2,0,1).RData') # residuals
+load(file='simulations/residuals ~ ARIMA(2,0,1).RData') # residuos
 
 # Cargamos las variables independientes
 load(file='simulations/X4 ~ ARIMA(1,0,3).RData')        # X4
@@ -141,7 +143,7 @@ load(file='simulations/X6 ~ ARIMA(2,1,1).RData')        # X6
 
 Se puede realizar una comprobación de que estas series siguen los procesos ARIMA mencionados. Para chequearlo, consulte el [apéndice](#apendice) del documento.
 
-Creamos el modelo y comprobamos la solución final de la función `auto.fit.arima.regression`.
+**Selección de variables y ajuste del modelo**: Creamos el modelo y comprobamos la solución final de la función `auto.fit.arima.regression()`.
 
 ```{r}
 beta0 <- 0.8; beta1 <- 2.8; beta2 <- -1.12; beta3 <- -2.3
@@ -151,7 +153,18 @@ ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T)
 ```
 
 
-Finalmente realizamos las predicciones puntuales:
+En el *output* de la función vemos cuál ha sido el proceso de selección de variables regresoras:
+
+1. En la primera iteración se añade la variable $X_t^{(1)}$ con retardo nulo (algo que es correcto teniendo en cuenta cómo se ha creado el modelo en \ref{eq:ejemplo1}) y obteniendo un AICc=-1135.19120552446.
+2. En la segunda iteración se introduce la variable $X_t^{(3)}$ con un retardo nulo y mejorando el AICc del modelo anterior (que sólo contaba con la variable $X_t^{(1)}$) con un AICc=-2213.72165014961.
+3. En la tercera iteración se añade la variable $X_t^{(2)}$ con retardo nulo y mejorando el criterio de información del modelo anterior (que tenía las variables $X_t^{(1)}$ y $X_t^{(1)}$) con un AICc=-3163.18780840121.
+4. En la siguiente iteración no se encuentran correlaciones significativas con ningún retardo para las variables $X_t^{(4)}$ y $X_t^{(6)}$, por lo que éstas no se pueden añadir al modelo. Para la varialbe $X_t^{(5)}$, se encuentra un retardo significativo en $k=-8$, pero no se mejora el AICc del modelo anterior (con las tres variables regresoras), por lo que se detiene el bucle para añadir variables.
+
+Como el modelo resultante de haber añadido de forma iterativa todas las variables tiene errores estacionarios (siguen un ARIMA(2,0,1), lo que coincide con la simulación realizada), se considera como modelo válido para definir la relación entre la variable respuesta $Y$ y el conjunto de variables regresoras seleccionadas ($X_t^{(1)}$, $X_t^{(2)}$ y $X_t^{(3)}$). Podemos observar cómo el valor del *intercept* y de los coeficientes de regresión se aproximan bastante a los coeficientes seleccionados al construir de forma artificial la variable regresora $Y$ en \@ref(eq:ejemplo1).
+
+
+
+**Predicción**: Finalmente realizamos las predicciones puntuales:
 
 ```{r}
 preds <- forecast_model(Y, regresoras, ajuste, h=10, mode='bootstrap')
@@ -163,7 +176,10 @@ display(plot_forecast(preds, rang=c(950, 1009)), name='ejemplo1')
 
 Supongamos un modelo de regresión dinámica parecido al del [primer ejemplo](#ejemplo1), utilizando las mismas variables, pero donde los retardos sean menores o iguales a 0 (que haya "variedad" en los retardos).
 
-$$ Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \beta_2 X_{t-r_2}^{(2)} + \beta_3 X_{t-r_3}^{(3)} + \eta_t$$
+
+\begin{equation}\label{eq:ejemplo2}
+    Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \beta_2 X_{t-r_2}^{(2)} + \beta_3 X_{t-r_3}^{(3)} + \eta_t
+\end{equation}
 
 donde:
 
@@ -172,19 +188,37 @@ donde:
 -   $X_t^{(2)} \sim$ ARMA(1, 1, 2) y su retardo $r_2=0$.
 -   $X_t^{(3)} \sim$ ARMA(1, 0, 2) y su retardo $r_3=3$.
 
+
 ```{r}
 # Construimos el modelo 
 beta0 <- -0.6; beta1 <- 1.7; beta2 <- -2.2; beta3 <- 1.3
 r1 <- 2; r3 <- 3
 Y <- beta0 + beta1 * lag(X1$X, -r1) + beta2 * X2$X + beta3 * lag(X3$X, -r3) + 
     residuals$X
+```
 
-# Usamos la función
+
+**Selección de variables y ajuste del modelo**:
+
+```{r}
 regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
 ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T,  
                                     stationary_method='adf.test')
-
 ```
+
+De nuevo, observando el *output* de la función podemos analizar la selección de variables:
+
+1. Primero se selecciona la variable $X_t^{(2)}$ con retardo nulo, construyendo un modelo de regresión con errores que siguen un ARIMA(4,1,0) y un AICc=-1156.68486061937.
+2. En la siguiente iteración se selecciona la variable $X_t^{(1)}$ con un retardo $r_1=2$, mejorando el AICc del modelo anterior con un nuevo AICc=-2171.66958134745.
+3. En la siguiente iteración se añade la variable $X_t^{(3)}$ con retardo $r_3=3$ al construir un modelo de regresión con variables regresoras $X_t^{(1)}$, $X_t^{(2)}$ y $X_t^{(3)}$ con respectivos retardos $r_1=2$, $r_2=0$ y $r_3=3$, consiguiendo un AICc=-3108.15443209894.
+4. En la siguiente iteración no se encuentran retardos significativos para $X_t^{(4)}$ y $X_t^{(6)}$, pero sí para $X_t^{(5)}$ con un retardo $r_5=8$.. No obstante, añadir esta variable al modelo no supone mejorar el AICc del modelo anterior (sólo se consigue un AICc=-3106.1490878263). Por tanto se detiene la selección de varaibles.
+
+Como el mejor modelo conseguido (el de la tercera iteración) ya tiene errores estacionarios (siguen un ARIMA(0,0,4)), se escoge dicho ajuste para modelizar la dependencia entre $Y$ y las variables regresoras escogidas.
+
+Podemos observar que los valores de los coeficientes de regresión y del *intercept* se aproximan bien a los valores verdaderos que se seleccionaron en la construcción del modelo. No obstante, los errores son modelizables con un ARIMA(0,0,4), no con un ARIMA(2,0,1).
+
+**Predicción**:
+
 
 ```{r}
 # Podemos mostrar las predicciones puntuales
@@ -195,22 +229,24 @@ display(plot_forecast(preds, rang=c(950, 1009)), name='ejemplo2')
 
 
 
-# Simulación de un modelo de regresión dinámico con errores ARIMA ($d=1$)
+# Simulación de un modelo de regresión dinámico con errores ARIMA ($d\geq 1$)
 
 En esta sección consideraremos modelos de regresión dinámica donde las innovaciones no son estacionarias:
 
 $$Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \beta_2 X_{t-r_2}^{(2)} + \cdots + X_{t-r_p}^{(p)}+ \eta_t, \qquad \eta_t\sim \text{ARIMA(p,d,q)} $$
 
 
-## Modelo donde $r_i=0$ para $i=1,...,p$
+## Modelo donde $r_i=0$ para $i=1,...,p$ {#ejemplo3}
 
 Tomemos el mismo modelo que en el [primer ejemplo](#ejemplo1) pero con errores no estacionarios:
 
-$$ Y_t = \beta_0 + \beta_1 X_t^{(1)} + \beta_2 X_t^{(2)} + \beta_3 X_t^{(3)} + \eta_t, \qquad \eta_t\sim\text{ARIMA(1,2,2)}$$
+\begin{equation}\label{eq:ejemplo3}
+     Y_t = \beta_0 + \beta_1 X_t^{(1)} + \beta_2 X_t^{(2)} + \beta_3 X_t^{(3)} + \eta_t, \qquad \eta_t\sim\text{ARIMA(1,2,2)}
+\end{equation}
 
 donde el conjunto de variables $\mathcal{X}$ sobre el que se realiza la selección está compuesto por las variables que sí influyen en $Y$:
 
--   $X_t^{(1)} \sim$ ARIMA(2, 1, 3) y su coeficiente $\beta_1 = 2.8$.
+-   $X_t^{(1)} \sim$ ARIMA(2, 1, 3) y su coeficiente $\beta_1 = -1.3$.
 -   $X_t^{(2)} \sim$ ARIMA(1, 1, 2) y su coeficiente $\beta_2 = 2.12$.
 -   $X_t^{(3)} \sim$ ARMA(1, 2) y su coeficiente $\beta_3 = 2.3$.
 -   El *intercept* es $\beta_0=0.8$.
@@ -226,14 +262,26 @@ beta0 <- 0.8; beta1 <- -1.3; beta2 <- 2.12; beta3 <- 2.3
 Y <- beta0 + beta1 * X1$X + beta2 * X2$X + beta3 * X3$X + 2.1*residuals$X
 ```
 
-Ajustamos el modelo con las variables originales (no diferenciamos ninguna):
+**Selección de variables y ajuste del modelo**: Ajustamos el modelo con las variables originales (no diferenciamos ninguna):
 
 ```{r}
 regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
 ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T) 
 ```
 
-```{r}
+
+
+Si volvemos a analizar el *output* de la consola observamos que se ha realizado una diferenciación regular a los datos (dobles líneas horizontales) para conseguir un ajuste en el que los errores fuesen estacionarios.
+
+1. En las primeras iteraciones se añaden, en este orden, las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$ con retardos nulos, mejorando el AICc iterativamente hasta alcanzar un valor de AICc=-1613.80360585469. Como el modelo ajustado con estas tres variables regresoras no tiene errores estacionarios (se ajustó un ARIMA(2,1,1) para los residuos), se intenta ajustar un modelo donde el orden de $d$ sea nulo. Como no se puede optimizar ("`No se ha podido encontrar un modelo válido con errores estacionarios...`"), se procede a aplicar una diferenciación regular a todos los datos, tanto variable respuesta como conjunto de posibles variables regresoras, y se vuelve a llamar a la función `auto.fit.arima.regression()` con los datos diferenciados.
+2. En la siguiente llamada a la función se consigue añadir al modelo, en este orden, las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$ con retardos nulos, y se ajusta un ARIMA(0,1,0) para los errores de regresión. No obstante, como este ajuste no cumple la condición de errores estacionarios, se intenta ajustar un ARIMA para los errores donde $d=0$. En este caso sí se consigue optimizar un modelo que respeta dicha condición, obteniendo un ajuste donde los residuos son estacionarios y el AICc=-1613.8.
+
+
+Obsérvese que habiendo diferenciado los datos, se ha conseguido seleccionar las 3 variables regresoras que realmente tienen una influencia en la construcción de la variable respuesta $Y$ con los retardos correctos.
+
+**Predicción**: Una vez obtenido el modelo, se pueden realizar predicciones puntuales. Cuando se detecta que el ajuste se corresponde a un ajuste de los datos diferenciados, la función `forecast_model()` lanza un aviso de que se utilizarán los datos en unidades originales para realizar las predicciones.
+
+```{r, collapse=TRUE}
 preds <- forecast_model(Y, regresoras, ajuste, h=10, mode='bootstrap')
 display(plot_forecast(preds, rang=c(950, 1009)), name='ejemplo3')
 ```
@@ -242,23 +290,31 @@ display(plot_forecast(preds, rang=c(950, 1009)), name='ejemplo3')
 
 ## Modelo donde $r_i \geq 0$ para $i=1,...,p$
 
-Podemos alterar el ejemplo anterior para que las variables regresoras influyan en $Y$ con cierto retardo. 
+Podemos alterar el [ejemplo anterior](#ejemplo3) para que las variables regresoras influyan en $Y$ con cierto retardo. 
 
 - La variable $X_t^{(1)}$ se introduce con retardo $r_1=2$.
 - La variable $X_t^{(3)}$ se introduce con retardo $r_3=1$.
 
 
 ```{r}
-# Creación del modelo con los nuevos residuos
 beta0 <- 0.8; beta1 <- -1.3; beta2 <- 2.12; beta3 <- 2.3
 r1 <- 2; r3 <- 1
 Y <- beta0 + beta1 * lag(X1$X, -r1) + beta2 * X2$X + 
     beta3 * lag(X3$X, -r3) + 1.5*residuals$X
-
-regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-auto.fit.arima.regression(Y, regresoras, show_info=T, 
-                          stationary_method='adf.test')
 ```
+
+
+**Selección de variables y ajuste del modelo**: 
+
+```{r}
+regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T, 
+                                    stationary_method='adf.test')
+```
+
+Como podemos observar, el *output* es muy similar al obtenido en el [ejemplo anterior](#ejemplo3). En las primeras iteraciones se añaden las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$, en ese orden, con retardos $r_3=1$, $r_2=0$ y $r_1=1$ (correcto según la definición del modelo), pero al no poder ajustar un modelo con errores estacionarios (se obtiene un modelo con errores ARIMA(2,1,1)), se tienen que diferenciar los datos y volver a llamar a la función.
+
+En la siguiente llamada, se vuelven a añadir las mismas variables con los retardos correctos, pero esta vez sí se consigue ajustar un modelo con errores estacionarios (un ARIMA(2,0,1)) con un AICc=-2269.51.
 
 \newpage
 

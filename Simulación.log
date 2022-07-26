@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.15.0 (MiKTeX 22.3) (format=lualatex 2022.6.13)  14 JUL 2022 13:53
+This is LuaHBTeX, Version 1.15.0 (MiKTeX 22.3) (format=lualatex 2022.6.13)  26 JUL 2022 17:02
  restricted system commands enabled.
 **Simulación.tex
 (./Simulación.tex
@@ -993,9 +993,9 @@ Package biblatex Warning: 'babel/polyglossia' detected but 'csquotes' missing.
 
 \@quotelevel=\count431
 \@quotereset=\count432
-(./Simulación.aux)
-\openout1 = Simulación.aux
+No file Simulación.aux.
 
+\openout1 = Simulación.aux
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 134.
 LaTeX Font Info:    ... okay on input line 134.
 LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 134.
@@ -1436,8 +1436,8 @@ Package biblatex Info: Automatic encoding selection.
 
 \openout4 = Simulación.bcf
 Package biblatex Info: Trying to load bibliographic data...
-Package biblatex Info: ... file 'Simulación.bbl' found.
-(./Simulación.bbl)
+Package biblatex Info: ... file 'Simulación.bbl' not found.
+No file Simulación.bbl.
 Package biblatex Info: Reference section=0 on input line 134.
 Package biblatex Info: Reference segment=0 on input line 134.
 Package hyperref Info: Link coloring ON on input line 134.
@@ -1481,7 +1481,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-(./Simulación.toc)
+No file Simulación.toc.
 \tf@toc=\write5
 
 \openout5 = Simulación.toc
@@ -1489,70 +1489,34 @@ Package microtype Info: Loading generic protrusion settings for font family
 
 {C:/Users/Usuario/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}]
 LaTeX Font Info:    Font shape `TU/lmss/m/it' in size <12> not available
-(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 198.
+(Font)              Font shape `TU/lmss/m/sl' tried instead on input line 199.
 [2] [3]
-<figures/ejemplo1.pdf, id=52, 602.25pt x 301.125pt>
+
+LaTeX Warning: Reference `eq:ejemplo1' on page 4 undefined on input line 332.
+
+[4]
+<figures/ejemplo1.pdf, id=42, 602.25pt x 301.125pt>
 File: figures/ejemplo1.pdf Graphic file (type pdf)
 <use figures/ejemplo1.pdf>
-Package luatex.def Info: figures/ejemplo1.pdf  used on input line 330.
+Package luatex.def Info: figures/ejemplo1.pdf  used on input line 371.
 (luatex.def)             Requested size: 496.34776pt x 248.17387pt.
-[4<./figures/ejemplo1.pdf>] [5]
-<figures/ejemplo2.pdf, id=76, 602.25pt x 301.125pt>
-File: figures/ejemplo2.pdf Graphic file (type pdf)
-<use figures/ejemplo2.pdf>
-Package luatex.def Info: figures/ejemplo2.pdf  used on input line 456.
-(luatex.def)             Requested size: 496.34776pt x 248.17387pt.
-[6]
-LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(1)/m/n' will be
-(Font)              scaled to size 17.80127pt on input line 461.
-LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(2)/m/n' will be
-(Font)              scaled to size 17.80286pt on input line 461.
-LaTeX Font Info:    Font shape `TU/latinmodern-math.otf(3)/m/n' will be
-(Font)              scaled to size 17.79942pt on input line 461.
-[7<./figures/ejemplo2.pdf>] [8] [9]
-<figures/ejemplo3.pdf, id=110, 602.25pt x 301.125pt>
-File: figures/ejemplo3.pdf Graphic file (type pdf)
-<use figures/ejemplo3.pdf>
-Package luatex.def Info: figures/ejemplo3.pdf  used on input line 671.
-(luatex.def)             Requested size: 496.34776pt x 248.17387pt.
-[10] [11<./figures/ejemplo3.pdf>] [12] [13] [14] [15] [16] [17] [18] [19] [20] 
-[21]
-
-LaTeX Warning: Empty bibliography on input line 1314.
-
-[22] (./Simulación.aux)
-Package logreq Info: Writing requests to 'Simulación.run.xml'.
-
-\openout1 = Simulación.run.xml
-)
+[5<./figures/ejemplo1.pdf>] [6]
+! Missing { inserted.
+<to be read again> 
+^
+l.518   para \(X_t^{(4)}\) y \(X_^
+                                {(6)}\), pero sí para \(X_t^{(5)}\) con un
 
 Here is how much of LuaTeX's memory you used:
- 29807 strings out of 477742
+ 29697 strings out of 477742
  125086,1648299 words of node,token memory allocated
- 700 words of node memory still in use:
-   8 hlist, 2 vlist, 2 rule, 1 local_par, 6 glue, 4 kern, 1 penalty, 3 glyph, 32
- attribute, 67 glue_spec, 14 attribute_list, 1 write, 1 user_defined nodes
-   avail lists: 1:2,2:1433,3:1150,4:268,5:1007,6:194,7:6249,8:62,9:440,10:7,11:7
-08
- 49547 multiletter control sequences out of 65536+600000
- 97 fonts using 24172983 bytes
- 86i,6n,121p,1199b,1802s stack positions out of 10000i,1000n,20000p,200000b,80000s
-<//?/c:/users/usuario/appdata/local/programs/miktex/fonts/opentype/public/lm/lmm
-ono10-regular.otf><//?/c:/users/usuario/appdata/local/programs/miktex/fonts/open
-type/public/lm/lmmono10-italic.otf><//?/c:/users/usuario/appdata/local/programs/
-miktex/fonts/opentype/public/lm/lmsans12-oblique.otf><//?/c:/users/usuario/appda
-ta/local/programs/miktex/fonts/opentype/public/lm-math/latinmodern-math.otf><//?
-/c:/users/usuario/appdata/local/programs/miktex/fonts/opentype/public/lm/lmmono1
-2-regular.otf><//?/c:/users/usuario/appdata/local/programs/miktex/fonts/opentype
-/public/lm-math/latinmodern-math.otf><//?/c:/users/usuario/appdata/local/program
-s/miktex/fonts/opentype/public/lm-math/latinmodern-math.otf><//?/c:/users/usuari
-o/appdata/local/programs/miktex/fonts/opentype/public/lm/lmsans10-bold.otf><//?/
-c:/users/usuario/appdata/local/programs/miktex/fonts/opentype/public/lm/lmsans12
--regular.otf><//?/c:/users/usuario/appdata/local/programs/miktex/fonts/opentype/
-public/lm/lmsans17-regular.otf>
-Output written on Simulación.pdf (22 pages, 154319 bytes).
-
-PDF statistics: 282 PDF objects out of 1000 (max. 8388607)
- 43 named destinations out of 1000 (max. 131072)
- 81 words of extra memory for PDF output out of 10000 (max. 100000000)
-
+ 19148 words of node memory still in use:
+   108 hlist, 8 vlist, 2 rule, 93 disc, 29 local_par, 2 dir, 23 math, 458 glue, 
+303 kern, 251 penalty, 1 noad, 2 math_char, 6 margin_kern, 1379 glyph, 380 attri
+bute, 78 glue_spec, 130 attribute_list, 2 temp, 1 shape, 1 user_defined, 4 pdf_d
+est, 8 pdf_colorstack nodes
+   avail lists: 1:2,2:939,3:900,4:335,5:611,6:120,7:5055,8:57,9:290,10:7,11:443
+ 49496 multiletter control sequences out of 65536+600000
+ 88 fonts using 21452563 bytes
+ 86i,6n,121p,1199b,799s stack positions out of 10000i,1000n,20000p,200000b,80000s
+!  ==> Fatal error occurred, no output PDF file produced!
