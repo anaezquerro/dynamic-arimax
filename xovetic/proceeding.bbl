@@ -1,0 +1,47 @@
+\begin{thebibliography}{1}
+
+\bibitem{ljungbox1970}
+G.~E.~P. Box and David~A. Pierce.
+\newblock Distribution of residual autocorrelations in
+  autoregressive-integrated moving average time series models.
+\newblock {\em Journal of the American Statistical Association},
+  65(332):1509--1526, 1970.
+
+\bibitem{cryer2008time}
+Jonathan~D Cryer and Kung-Sik Chan.
+\newblock {\em Time series analysis: with applications in R}, chapter~11.
+\newblock 2, 2008.
+
+\bibitem{dickey1979distribution}
+David~A Dickey and Wayne~A Fuller.
+\newblock Distribution of the estimators for autoregressive time series with a
+  unit root.
+\newblock {\em Journal of the American statistical association},
+  74(366a):427--431, 1979.
+
+\bibitem{Haynes2013}
+Winston Haynes.
+\newblock {\em Student's t-Test}, pages 2023--2025.
+\newblock Springer New York, New York, NY, 2013.
+
+\bibitem{hyndman2018forecasting}
+Rob~J Hyndman and George Athanasopoulos.
+\newblock {\em Forecasting: principles and practice}, chapter~9.
+\newblock OTexts, 2018.
+
+\bibitem{Jarque2011}
+Carlos~M. Jarque.
+\newblock {\em Jarque-Bera Test}, pages 701--702.
+\newblock Springer Berlin Heidelberg, Berlin, Heidelberg, 2011.
+
+\bibitem{ljungbox1978}
+G.~M. Ljung and G.~E.~P. Box.
+\newblock {On a measure of lack of fit in time series models}.
+\newblock {\em Biometrika}, 65(2):297--303, 08 1978.
+
+\bibitem{shapiro1965analysis}
+Samuel~Sanford Shapiro and Martin~B Wilk.
+\newblock An analysis of variance test for normality (complete samples).
+\newblock {\em Biometrika}, 52(3/4):591--611, 1965.
+
+\end{thebibliography}

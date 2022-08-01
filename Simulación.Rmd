@@ -220,7 +220,7 @@ Podemos observar que los valores de los coeficientes de regresión y del *interc
 **Predicción**:
 
 
-```{r}
+```{r, collapse=TRUE}
 # Podemos mostrar las predicciones puntuales
 preds <- forecast_model(Y, regresoras, ajuste, h=10, mode='bootstrap')
 display(plot_forecast(preds, rang=c(950, 1009)), name='ejemplo2')
