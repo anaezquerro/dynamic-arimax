@@ -333,7 +333,7 @@ construct.data <- function(model_history, serie, xregs, new_xreg_name,
         
         for (j in 1:nrow(model_history)) {
             xreg <- xregs[, c(model_history$var[j])]                    # variable regresora
-            xreg <- lag(xreg, as.integer(model_history$lag[j]))         # variable regresora retardada
+            xreg <- stats::lag(xreg, as.integer(model_history$lag[j]))  # variable regresora retardada
             xreg <- window(xreg, start=start(serie), end=end(serie))    # variable recortada
             
             data <- cbind(data, xreg)
@@ -345,7 +345,7 @@ construct.data <- function(model_history, serie, xregs, new_xreg_name,
     # Se añade la nueva variable regresora en caso de que sea necesario
     if (!is.null(new_xreg_name)) {
         
-        new_xreg <- lag(xregs[, c(new_xreg_name)], optimal_lag)           # nueva variable retardada
+        new_xreg <- stats::lag(xregs[, c(new_xreg_name)], optimal_lag)           # nueva variable retardada
         new_xreg <- window(new_xreg, start=start(serie), end=end(serie))  # nueva variable recortada
         data <- cbind(data, new_xreg)
         

@@ -34,6 +34,10 @@ for (i in 1:length(dats)) {   # concatenamos todos los data.frames
 cat(paste0('Número total de columnas del data.frame: ', ncol(individual), '\n'))
 cat(paste0('Número total de filas del data.frame: ', nrow(individual)))
 
+#' En el dataset hay errores: aparece la semana 52 del 2022, que aún no ha 
+#' sucedido. Se interpreta que se trata de un error y se refiere a la semana 52 
+#' del 2021
+individual[(individual$anno == 2022) & (individual$semana==52),]$anno <- 2021
 
 
 #' En el dataframe completo añadimos una nueva columna para representar la 
@@ -138,9 +142,13 @@ pob13$pob65 <- apply(pob13[, c('pob65_69', 'pob70_74', 'pob75_79', 'pob80_84', '
 # lo añadimos al resto de datos
 pob <- unique(rbind(pob, pob13[, colnames(pob)]))
 
+# corregimos los errores de pob respecto a la semana 52 del 2021
+pob[(pob$anno == 2022) & (pob$semana == 52),]$anno <- 2021
+
 # Añadimos la fecha de la misma forma que con `individual`
 pob$fecha <- paste0(pob$anno, '-', ifelse(pob$semana < 10, "0", ""), pob$semana)
 pob <- pob[order(pob$fecha), c('fecha', 'pob04', 'pob514', 'pob1544', 'pob4564', 'pob65')]
+pob <- aggregate(pob[, -c(1)], by=list(fecha=pob$fecha), FUN=max, na.rm=T)
 head(pob)
 
 # Lo añadimos a los datos agregados
@@ -208,11 +216,18 @@ head(vac)
 
 # Añadimos los datos al objeto final
 vac <- vac[, c('fecha', colnames(vac)[startsWith(colnames(vac), 'vac')])]
+vac <- aggregate(vac[, -c(1)], by=list(fecha=vac$fecha), FUN=max, na.rm=T)
 head(vac)
 
 
 dat <- merge(dat, vac, by=c('fecha'), all.x=T)
 head(dat)
+
+
+# Las primeras observaciones de las variables de vacunación son NA porque 
+# no hay datos de la vacunación en esas semanas. Podemos sustituir esos 
+# valores por 0
+dat[is.na(dat)] <- 0
 
 
 write.csv(dat, file="data/evolucion_gripe_covid.csv", row.names=F)

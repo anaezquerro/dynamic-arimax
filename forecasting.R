@@ -185,9 +185,11 @@ plot_forecast <- function(preds, rang=NULL) {
         preds$mean <- suppressWarnings(window(preds$mean, start=rang[1], end=rang[2]))
     }
     
+    
+    
     fig <- plot_ly(type='scatter', mode='lines') %>%
         add_trace(x=time(preds$x), y=preds$x, line=list(color='grey'),
-                  name='serie temporal', showlegend=T)
+                  name='time serie', showlegend=T)
     
     for (i in rev(1:length(preds$level))) {
         fig <- fig %>% 
@@ -199,7 +201,8 @@ plot_forecast <- function(preds, rang=NULL) {
         
     }
     fig <- fig %>% add_trace(x=time(preds$mean), y=preds$mean, line=list(color='#2F63D4'),
-                     name='predicciones puntuales', showlegend=T)
+                     name='forecasting', showlegend=T)
+    
     
     return(fig)
 }

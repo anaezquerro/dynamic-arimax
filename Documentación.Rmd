@@ -313,7 +313,7 @@ Para realizar predicciones a horizonte $h$ a partir de un modelo de regresión e
 **Devuelve**: Objeto `forecast` con las predicciones puntuales y los intervalos de predicción en unidades originales (utilizando el valor de `$ndiff` en el objeto `ajuste`).
 
 ```{r, eval=F}
-forecast_model(ajuste, h, mode='bootstrap', levels=c(80, 90))
+forecast_model(serie, xregs, ajuste, h, mode='bootstrap', levels=c(80, 90))
 ```
 
 **Argumentos**:
@@ -377,7 +377,7 @@ A continuación, usamos la función `auto.arima`:
 ajuste <- auto.arima(gripe, stepwise=FALSE, approximation=FALSE, trace=TRUE)
 ```
 
-Y comprobamos que el mejor modelo (siguiendo el AICc) es un ARIMA(2, 0, 1) con media.
+Y comprobamos que el mejor modelo (siguiendo el AICc) es un ARIMA(1, 1, 0) sin media.
 
 ```{r}
 ajuste
