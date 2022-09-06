@@ -24,8 +24,8 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     
     max_lag <- get.maximum.lag(serie, xregs, alpha=alpha, method=stationary_method)
     response <- serie
-    
-    # Inicio del bucle para añadir variables regresoras
+
+        # Inicio del bucle para añadir variables regresoras
     for (i in 1:ncol(xregs)) {
         if (max_lag == -Inf) {break}
         
@@ -62,7 +62,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             
             data_new <- construct.data(model_history, serie, xregs, xreg_name, optimal_lag, max_lag)
             ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
-                                     ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
+                                     ic=ic, d=NA, D=NA, alpha=alpha, show_info=T)
             
             # Si no se consigue un ajuste válido, se prueba con la siguiente variable
             if (all(is.na(ajuste))) {   
@@ -116,8 +116,6 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             cat(paste0('El modelo global no tiene errores estacionarios\n', 
                        'Se intenta ajustar uno que sí los tenga\n'))
         }
-        
-        
         data_new <- construct.data(model_history, serie, xregs, new_xreg_name = NULL, 
                                    optimal_lag = NULL, max_lag=max_lag)
         global_fit <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)],

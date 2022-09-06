@@ -206,6 +206,7 @@ update_orders <- function(ajuste, fixed) {
     new_orders <- list(regular=c(new_orders[1], ajuste$arma[6], new_orders[2]),
                        seasonal=c(new_orders[3], ajuste$arma[7], new_orders[4]),
                        include_mean=include_mean)
+    
     return(list(orders=new_orders, fixed=new_fixed))
     
 }
@@ -217,6 +218,8 @@ update_order <- function(order, remov_coefs) {
     }
     return(order)
 }
+
+
 
 
 #' Obtención de los coeficientes ARMA a chequear de un ajuste
@@ -257,6 +260,50 @@ get_arma_coefs_names <- function(ajuste) {
   return(arma_coefs_names)
 }
 
+#' Obtención del coeficiente no significativo (considerando el p-valor)
+#' 
+#'
+get_nonsig <- function(ajuste, alpha) {
+    stat <- qnorm(1-alpha/2)
+    
+    # obtenemos los coeficientes que no están fijados a 0
+    coefs_mask <- ajuste$coef != 0
+    coefs <- ajuste$coef[coefs_mask]
+    
+    # si no hay ningún coeficiente con el primer requisito, devolver NA
+    if (length(names(coefs)) == 0) {
+        return(NA)
+    }
+    # obtenemos una máscara de los coeficientes NO significativos
+    coefs_sd <- suppressWarnings(sqrt(diag(ajuste$var.coef)))
+    nonsig <- abs(coefs) < stat*coefs_sd        # TRUE -> no significativo
+    
+    if (!any(nonsig)) {
+        return(NA)
+    }
+    
+    
+    # obtenemos el coeficiente a fijar a 0
+    remov <- names(which.min(abs(coefs)/(stat*coefs_sd)))
+    
+    return(remov)
+}
+
+update_xregs <- function(ajuste, fixed) {
+    
+    xregs_coefs_mask <- sapply(names(ajuste$coef), str_detect, pattern=c('s?ma\\d+', 's?ar\\d+', 'mean', 'drift', 'intercept'))
+    xregs_coefs_mask <- !(apply(xregs_coefs_mask, 2, sum) == 1)
+    remov_mask <- (!is.na(fixed)) & xregs_coefs_mask
+    
+    if (!any(remov_mask)) {
+        return(NULL)
+    }
+    
+    xregs <- ajuste$xreg[, names(ajuste$coef)[xregs_coefs_mask & (!remov_mask)]]
+    return(xregs)
+}
+
+
 #' Ajuste de los coeficientes de un modelo ARIMA
 #'
 #' @param ajuste Ajuste inicial de un modelo ARIMA. Sus coeficientes pueden no ser 
@@ -279,23 +326,31 @@ fit.coefficients <- function(ajuste, alpha=0.05, show_info=T) {
   while (TRUE) {
     
     # Obtención de los nombres de los coeficientes ARMA
-    arma_coefs_names <- get_arma_coefs_names(ajuste)
+    # arma_coefs_names <- get_arma_coefs_names(ajuste)
     
     # En caso de que no haya coeficientes ARIMA, se devuelve el ajuste 
-    if (is.null(arma_coefs_names)) { return(ajuste) }
+    # if (is.null(arma_coefs_names)) { return(ajuste) }
     
     # Obtenemos los valores de dichos coeficientes y sus desviaciones típicas
-    arma_coefs <- ajuste$coef[arma_coefs_names]
-    arma_coefs_sd <- suppressWarnings(sqrt(diag(ajuste$var.coef[arma_coefs_names, arma_coefs_names])))
-    res <- abs(arma_coefs) < stat*arma_coefs_sd
+    # arma_coefs <- ajuste$coef[arma_coefs_names]
+    # arma_coefs_sd <- suppressWarnings(sqrt(diag(ajuste$var.coef[arma_coefs_names, arma_coefs_names])))
+    # res <- abs(arma_coefs) < stat*arma_coefs_sd
     
-    if (!any(res)) { # en caso de que todos sean significativos, se para el bucle
-      break
+    # if (!any(res)) { # en caso de que todos sean significativos, se para el bucle
+    #   break
+    # }
+    # 
+    # # Configuración del vector fixed
+    # remov <- names(which.min(abs(arma_coefs)/(stat*arma_coefs_sd)))
+    # fixed[names(ajuste$coef) == remov] <- 
+      
+      
+    remov <- get_nonsig(ajuste, alpha)
+    fixed[names(ajuste$coef) == remov] <- 0 
+    if (is.na(remov)) { # no hay ningún coeficiente que retirar
+        return(ajuste)
     }
-    
-    # Configuración del vector fixed
-    remov <- names(which.min(abs(arma_coefs)/(stat*arma_coefs_sd)))
-    fixed[names(ajuste$coef) == remov] <- 0
+      
     if (show_info) {
       cat(paste0('Es necesario retirar del modelo el parámetro: ', remov, '\n'))
     }
@@ -304,6 +359,15 @@ fit.coefficients <- function(ajuste, alpha=0.05, show_info=T) {
     orders_fixed_update <- update_orders(ajuste, fixed)
     orders <- orders_fixed_update$orders
     fixed <- orders_fixed_update$fixed
+    
+    # Actualización de los coeficientes de regresión
+    # xregs_update <- update_xregs(ajuste, fixed)
+    # 
+    # if (!is.null(xregs_update)) {
+    #     fixed <- fixed[!(names(ajuste$coef) == remov)]
+    #     xregs <- xregs_update
+    # }
+
     
     # Ajuste del nuevo modelo
     ajuste <- fit.model(ajuste$x, xregs=ajuste$xreg, orders=orders, fixed=fixed)
