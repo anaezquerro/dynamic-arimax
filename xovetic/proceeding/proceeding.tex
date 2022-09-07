@@ -96,7 +96,7 @@ In this work we formally introduce a new algorithm to select covariates which si
 
 \section{Methodology}
 
-Following the definition in (\ref{dynamic.regression.model}), \cite{cryer2008time} proposed a method named \textit{prewhitening} for removing spurious correlation (false linear correlation) between two processes $X_t$ and $Y_t$ (where one of them is not white noise and/or the other is not stationary) by analyzing the cross correlation function $\rho_k(\ddot{X}_t, \ddot{Y}_t) =  \cfrac{\text{Cov}(\ddot{X}_t, \ddot{Y}_{t-k})}{\sigma_{\ddot{X}_t} \sigma_{\ddot{Y}_t}} $ where $\sigma_{Z_t}$ denotes the standard deviation of a stochastic process $Z_t$ and $\ddot{X}_t$ and $\ddot{Y}_t$ are obtained via some linear filter application to $X_t$ and $Y_t$ ensuring one of them is white noise and the other is a stationary process. Specifically, \cite{cryer2008time} proposes a real linear correlation between $X_t$ and $Y_t$ if exists some $k$ where $\rho_k(\ddot{X}_t, \ddot{Y}_t)$ is statistically significant. This method is applied to obtain the optimal lags of each regressor in (\ref{dynamic.regression.model}), considering the condition of $k$ being less or equal than $0$.
+Following the definition in \ref{dynamic.regression.model}, \cite{cryer2008time} proposed a method named \textit{prewhitening} for removing spurious correlation (false linear correlation) between two processes $X_t$ and $Y_t$ (where one of them is not white noise and/or the other is not stationary) by analyzing the cross correlation function $\rho_k(\ddot{X}_t, \ddot{Y}_t) =  \cfrac{\text{Cov}(\ddot{X}_t, \ddot{Y}_{t-k})}{\sigma_{\ddot{X}_t} \sigma_{\ddot{Y}_t}} $ where $\sigma_{Z_t}$ denotes the standard deviation of a stochastic process $Z_t$ and $\ddot{X}_t$ and $\ddot{Y}_t$ are obtained via some linear filter application to $X_t$ and $Y_t$ ensuring one of them is white noise and the other is a stationary process. Specifically, \cite{cryer2008time} proposes a real linear correlation between $X_t$ and $Y_t$ if exists some $k$ where $\rho_k(\ddot{X}_t, \ddot{Y}_t)$ is statistically significant. This method is applied to obtain the optimal lags of each regressor in \ref{dynamic.regression.model}, considering the condition of $k$ being less or equal than $0$.
 
 Our approach iteratively adds dependent processes to a model by checking if a significant correlation (as in \cite{cryer2008time}) exists between a new proccess (candidate for regressor variable) and the residuals $\eta_t$ of a simpler model.
 
@@ -104,7 +104,7 @@ Let $Y_t$ be the stochastic dependent proccess and $\mathcal{X}$ be the set of p
 
 
 \begin{enumerate}
-    \item Initialization. Consider the process $\tilde{Y}_t=Y_t$ that will be used to check the existence of linear correlation between $Y_t$ and each $X_t\in \mathcal{X}$ with \cite{cryer2008time} method, $\nu=\infty$ the value of the IC corresponding to the best model with (\ref{dynamic.regression.model}) form, $\mathcal{X}^{(s,r)}$ the set of selected covariates paired with their respective optimal lags and $\mathcal{X}^{(s)}$ the set of selected covariates (with no lag information). Let $\mathcal{M}(\mathcal{Z})$ be the fitted dynamic regression model regarding $Y_t$ where $\mathcal{Z}$ is the set of covariates paired with their optimal lags:
+    \item Initialization. Consider the process $\tilde{Y}_t=Y_t$ that will be used to check the existence of linear correlation between $Y_t$ and each $X_t\in \mathcal{X}$ with \cite{cryer2008time} method, $\nu=\infty$ the value of the IC corresponding to the best model with \ref{dynamic.regression.model} form, $\mathcal{X}^{(s,r)}$ the set of selected covariates paired with their respective optimal lags and $\mathcal{X}^{(s)}$ the set of selected covariates (with no lag information). Let $\mathcal{M}(\mathcal{Z})$ be the fitted dynamic regression model regarding $Y_t$ where $\mathcal{Z}$ is the set of covariates paired with their optimal lags:
     \[ \mathcal{M}(\mathcal{Z}) := Y_t = \beta_0 + \sum_{(Z_t, r)\in\mathcal{Z}} \beta^{(Z_t, r)} Z_{t-r} + \eta_t\]
     \noindent where $\beta^{(Z_t, r)}$ is obtained via some estimation.
 
@@ -114,7 +114,7 @@ Let $Y_t$ be the stochastic dependent proccess and $\mathcal{X}$ be the set of p
         X^\text{best}_t =  \underset{X_t\in\mathcal{X}-\mathcal{X}^{(s)}}{\arg\min} \Bigg\{ \ \text{criteria}\Bigg(\ \mathcal{M}\Big(\mathcal{X}^{(s,r)} \cup \big\{(X_t, r_{X_t})\big\} \Big) \ \Bigg) \Bigg\}
     \end{equation}
 
-    \noindent conditioned to $\text{criteria}(\cdot) < \nu$\footnote{for simplicity, we denote the expression in $\text{criteria}()$ in (\ref{iterative.selection}) as $\cdot$}. 
+    \noindent conditioned to $\text{criteria}(\cdot) < \nu$\footnote{for simplicity, we denote the expression in $\text{criteria}()$ in \ref{iterative.selection} as $\cdot$}. 
     If $X^{\text{best}}_t$ exists, consider $\mathcal{X}^{(s,r)} = \mathcal{X}^{(s,r)}  \cup \{(X_t^\text{best}, r_{X_t^\text{best}})\}$, $\tilde{Y}_t = \eta_t$ and $\nu=\text{criteria}(\mathcal{X}^{(s,r)})$\footnote{once $X_t^\text{best}$ has been added to the model }. Repeat this step until no process $X_t\in\mathcal{X}-\mathcal{X}^{(s)}$ can be added to the model, i.e. $X_t^\text{best}$ does not exist.
 
     \item Finalization. If the errors $\eta_t$ of $\mathcal{M}(\mathcal{X}^{(s,r)})$ are not stationary and no model with $\eta_t\sim\text{ARMA(p,q)}$ and $\mathcal{X}^{(s,r)}$ covariates can be adjusted, consider the regular differentiation of all data (dependent variable and regressor candidates) and return to (1). Otherwise, it is proven that  $\mathcal{M}(\mathcal{X}^{(s,r)})$ with stationary errors defines the significant correlation between the set of $\mathcal{X}^{(s)}$ regressor variables and the dependent proccess $Y_t$.
@@ -124,7 +124,7 @@ This algorithm was implemented in R programming language. The step 2 was optimiz
 
 \section{Simulation results}
 
-In order to validate the performance of our selection method, we simulate multiple scenarios where a time series $Y_t$ was artificially constructed with other variables (introduced with their respective coefficients and lags as in (\ref{dynamic.regression.model})), which were added to a set of candidates along with more variables which do not influence in the construction of $Y_t$. The algorithm was tested when the residuals of the model $\eta_t$ were stationary and non-stationary. 
+In order to validate the performance of our selection method, we simulate multiple scenarios where a time series $Y_t$ was artificially constructed with other variables (introduced with their respective coefficients and lags as in \ref{dynamic.regression.model}), which were added to a set of candidates along with more variables which do not influence in the construction of $Y_t$. The algorithm was tested when the residuals of the model $\eta_t$ were stationary and non-stationary. 
 
 \section{COVID-19 application}
 
@@ -157,7 +157,7 @@ In order to validate the performance of our selection method, we simulate multip
 
 Our approach was tested in the IRAS (\textit{acute respiratory infections}) database of Catalonia (Spain) in order to analyze the evolution of COVID-19 and the impact of other variables, such as the vaccination progress and influenza confirmed cases. In addition, individual data was aggregated by age ranges and Health Areas to study the correlation between groups and their influence in the global evolution. 
 
-Table (\ref{covid19model})\footnote{where \texttt{vac1218}, \texttt{vac1845}, \texttt{vac4565}, \texttt{vac6580} denote the vaccination in population from 12, 18, 45 and 65 up to 18, 45, 65 and 80 years (exclusive), respectively, and \texttt{vac80} denotes the vaccination in population from 80 years.} resumes the algorithm trace and the order of covariates addition to the model.
+Table \ref{covid19model}\footnote{where \texttt{vac1218}, \texttt{vac1845}, \texttt{vac4565}, \texttt{vac6580} denote the vaccination in population from 12, 18, 45 and 65 up to 18, 45, 65 and 80 years (exclusive), respectively, and \texttt{vac80} denotes the vaccination in population from 80 years.} resumes the algorithm trace and the order of covariates addition to the model.
 
 \bibliographystyle{plain}
 \bibliography{bibliography}
