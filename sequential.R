@@ -62,7 +62,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             
             data_new <- construct.data(model_history, serie, xregs, xreg_name, optimal_lag, max_lag)
             ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
-                                     ic=ic, d=NA, D=NA, alpha=alpha, show_info=T)
+                                     ic=ic, d=NA, D=NA, alpha=alpha, show_info=F)
             
             # Si no se consigue un ajuste válido, se prueba con la siguiente variable
             if (all(is.na(ajuste))) {   

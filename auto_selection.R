@@ -88,23 +88,22 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         }
         
         # Creación de la matriz de tipo `ts` con la variables respuesta, variables 
-        # regreosras anteriormente añadidas y nueva variable regresora
+        # regresoras anteriormente añadidas y nueva variable regresora
         data_new <- construct.data(model_history, serie, xregs, xreg_name, optimal_lag, max_lag)
         
         # Ajuste del modelo de regresión dinámica con la nueva variable regresora
         ajuste <- auto.fit.arima(data_new[, c(1)], xregs=data_new[, -c(1)], 
                                  d=NA, D=NA, alpha=alpha, show_info=F)
         
+        if (!is_valid(ajuste)) {
+            return(paste0('No se ha podido ajustar un modelo para ', xreg_name, '\n'))
+        }
+        
         if (! 
             ((xreg_name %in% names(ajuste$coef)) || 
              ('xreg' %in% names(ajuste$coef)))
             ) {
             return(paste0('No se ha podido incluir la variable ', xreg_name, ' en el modelo\n'))
-        }
-        
-        
-        if (!is_valid(ajuste)) {
-            return(paste0('No se ha podido ajustar un modelo para ', xreg_name, '\n'))
         }
         
         ajuste$optimal_lag <- optimal_lag
