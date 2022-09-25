@@ -4,33 +4,7 @@
 \usepackage{enumitem}
 \usepackage{makecell, caption}
 
-% use this if you have a long article and want to create an index
-% \usepackage{makeidx}
-
-% In order to save space or manage large tables or figures in a
-% landcape-like text, you can use the rotating and pdflscape
-% packages. Uncomment the desired from the below.
-%
-% \usepackage{rotating}
-% \usepackage{pdflscape}
-
-% Some of our commands for this guide.
-%
-
-%\makeindex
-
-%% Front Matter
-%%
-% Regular title as in the article class.
-%
 \title{Automatic covariates selection in dynamic regression models with application to COVID-19 evolution}
-% \thanks{Other people who contributed to this document include Maria Voronkov
-%   (Imperial College and EasyChair) and Graham Gough (The University of
-%   Manchester).}
-
-% Authors are joined by \and. Their affiliations are given by \inst, which indexes
-% into the list defined using \institute
-%
 \author{
     Ana X. Ezquerro \inst{1}
 \and
@@ -39,7 +13,6 @@
    Manuel Oviedo de la Fuente \inst{3}
 }
 
-% Institutes for affiliations are also joined by \and,
 \institute{
    University of A Coruña, \texttt{ana.ezquerro@udc.es}
 \and
@@ -49,17 +22,6 @@ Grupo MODES, Departamento de Matemáticas, University of A Coruña, CITIC \\ \te
 }
 \authorrunning{Ana X. Ezquerro, Germán Aneiros, Manuel Oviedo}
 
-%  \authorrunning{} has to be set for the shorter version of the authors' names;
-% otherwise a warning will be rendered in the running heads. When processed by
-% EasyChair, this command is mandatory: a document without \authorrunning
-% will be rejected by EasyChair
-
-% \authorrunning{Mokhov, Sutcliffe and Voronkov}
-
-% \titlerunning{} has to be set to either the main title or its shorter
-% version for the running heads. When processed by
-% EasyChair, this command is mandatory: a document without \titlerunning
-% will be rejected by EasyChair
 \titlerunning{XoveTIC Proceedings 2022}
 
 \begin{document}
@@ -70,10 +32,6 @@ Grupo MODES, Departamento de Matemáticas, University of A Coruña, CITIC \\ \te
     This work introduces a new approach in time-series analysis field for automatic covariates selection in dynamic regression models. Based on \cite{cryer2008time} and \cite{hyndman2018forecasting} previous study, a forward-selection method is proposed for adding new significant covariates from a given set. This algorithm has been implemented and optimized in R as a package, and it has been applied to multiple simulations to validate its performance. Finally, the obtained results from the IRAS database of Catalonia are presented to analyze the COVID-19 evolution. 
 \end{abstract}
 
-% The table of contents below is added for your convenience. Please do not use
-% the table of contents if you are preparing your paper for publication in the
-% EPiC Series or Kalpa Publications series
-
 \setcounter{tocdepth}{2}
 {\small
 \tableofcontents}
@@ -82,7 +40,7 @@ Grupo MODES, Departamento de Matemáticas, University of A Coruña, CITIC \\ \te
 
 In time-series analysis, the well-known dynamic regression models allow formally modelling the dependence between a set of covariates and a dependent variable considering the intrinsic temporal component of all participant variables. Thus, this type of regression models are of widespread application in diverse scenarios where it is desired to analyze the effect of recollected data in a time series of interest. 
 
-Formally, dynamic linear regression models define the linear dependence between a stochastic proccess $Y_t$ (the dependent variable) and a set of proccesses  $\mathcal{X}=\{ X_t^{(1)}, X_t^{(2)}, ..., X_t^{(m)}\}$ (candidates for regressor variables) in times non-greater than $t$:
+Formally, dynamic linear regression models define the linear dependence between a stochastic process $Y_t$ (the dependent variable) and a set of processes  $\mathcal{X}=\{ X_t^{(1)}, X_t^{(2)}, ..., X_t^{(m)}\}$ (candidates for regressor variables) in times non-greater than $t$:
 
 \begin{equation}\label{dynamic.regression.model}
 Y_t = \beta_0 + \beta_1 X^{(1)}_{t-r_1} + \beta_2 X^{(2)}_{t-r_2} + \cdots + \beta_m  X^{(m)}_{t-r_m} + \eta_t 
@@ -98,9 +56,9 @@ In this work we formally introduce a new algorithm to select covariates which si
 
 Following the definition in \ref{dynamic.regression.model}, \cite{cryer2008time} proposed a method named \textit{prewhitening} for removing spurious correlation (false linear correlation) between two processes $X_t$ and $Y_t$ (where one of them is not white noise and/or the other is not stationary) by analyzing the cross correlation function $\rho_k(\ddot{X}_t, \ddot{Y}_t) =  \cfrac{\text{Cov}(\ddot{X}_t, \ddot{Y}_{t-k})}{\sigma_{\ddot{X}_t} \sigma_{\ddot{Y}_t}} $ where $\sigma_{Z_t}$ denotes the standard deviation of a stochastic process $Z_t$ and $\ddot{X}_t$ and $\ddot{Y}_t$ are obtained via some linear filter application to $X_t$ and $Y_t$ ensuring one of them is white noise and the other is a stationary process. Specifically, \cite{cryer2008time} proposes a real linear correlation between $X_t$ and $Y_t$ if exists some $k$ where $\rho_k(\ddot{X}_t, \ddot{Y}_t)$ is statistically significant. This method is applied to obtain the optimal lags of each regressor in \ref{dynamic.regression.model}, considering the condition of $k$ being less or equal than $0$.
 
-Our approach iteratively adds dependent processes to a model by checking if a significant correlation (as in \cite{cryer2008time}) exists between a new proccess (candidate for regressor variable) and the residuals $\eta_t$ of a simpler model.
+Our approach iteratively adds dependent processes to a model by checking if a significant correlation (as in \cite{cryer2008time}) exists between a new process (candidate for regressor variable) and the residuals $\eta_t$ of a simpler model.
 
-Let $Y_t$ be the stochastic dependent proccess and $\mathcal{X}$ be the set of processes that might act as regressor variables in the model (candidates), and an information criterion (IC) for model evaluation. Our method proceeds as follows:
+Let $Y_t$ be the stochastic dependent process and $\mathcal{X}$ be the set of processes that might act as regressor variables in the model (candidates), and an information criterion (IC) for model evaluation. Our method proceeds as follows:
 
 
 \begin{enumerate}
@@ -117,10 +75,10 @@ Let $Y_t$ be the stochastic dependent proccess and $\mathcal{X}$ be the set of p
     \noindent conditioned to $\text{criteria}(\cdot) < \nu$\footnote{for simplicity, we denote the expression in $\text{criteria}()$ in \ref{iterative.selection} as $\cdot$}. 
     If $X^{\text{best}}_t$ exists, consider $\mathcal{X}^{(s,r)} = \mathcal{X}^{(s,r)}  \cup \{(X_t^\text{best}, r_{X_t^\text{best}})\}$, $\tilde{Y}_t = \eta_t$ and $\nu=\text{criteria}(\mathcal{X}^{(s,r)})$\footnote{once $X_t^\text{best}$ has been added to the model }. Repeat this step until no process $X_t\in\mathcal{X}-\mathcal{X}^{(s)}$ can be added to the model, i.e. $X_t^\text{best}$ does not exist.
 
-    \item Finalization. If the errors $\eta_t$ of $\mathcal{M}(\mathcal{X}^{(s,r)})$ are not stationary and no model with $\eta_t\sim\text{ARMA(p,q)}$ and $\mathcal{X}^{(s,r)}$ covariates can be adjusted, consider the regular differentiation of all data (dependent variable and regressor candidates) and return to (1). Otherwise, it is proven that  $\mathcal{M}(\mathcal{X}^{(s,r)})$ with stationary errors defines the significant correlation between the set of $\mathcal{X}^{(s)}$ regressor variables and the dependent proccess $Y_t$.
+    \item Finalization. If the errors $\eta_t$ of $\mathcal{M}(\mathcal{X}^{(s,r)})$ are not stationary and no model with $\eta_t\sim\text{ARMA(p,q)}$ and $\mathcal{X}^{(s,r)}$ covariates can be adjusted, consider the regular differentiation of all data (dependent variable and regressor candidates) and return to (1). Otherwise, it is proven that  $\mathcal{M}(\mathcal{X}^{(s,r)})$ with stationary errors defines the significant correlation between the set of $\mathcal{X}^{(s)}$ regressor variables and the dependent process $Y_t$.
 \end{enumerate}
 
-This algorithm was implemented in R programming language. The step 2 was optimized by parallelizing the fit of independent models of each candidate in $\mathcal{X}$.  Dickey-Fuller test is used for checking proccesses stationary, Ljung-Box to check the independence, Shapiro-Wilks and Jarque-Bera tests for normality and t-test for zero mean of ARIMA residuals. 
+This algorithm was implemented in R programming language. The step 2 was optimized by parallelizing the fit of independent models of each candidate in $\mathcal{X}$.  Dickey-Fuller test is used for checking processes stationary, Ljung-Box to check the independence, Shapiro-Wilks and Jarque-Bera tests for normality and t-test for zero mean of ARIMA residuals. 
 
 \section{Simulation results}
 

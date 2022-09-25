@@ -156,7 +156,7 @@ display(result_co2$fig_residuals, "residuals co2", width=1000, height=800)
 
 # Función de selección automática de múltiples variables y retardos en modelos ARIMAX (`auto.fit.arima.regression`)
 
-**Descripción**: Método de selección las variables regresoras y sus respectivos retardos (óptimos) para una serie de tiempo en base al método propuesto por @cryer2008time.
+**Descripción**: Método de selección de las variables regresoras y sus respectivos retardos (óptimos) para una serie de tiempo en base al método propuesto por @cryer2008time.
 
 **Devuelve**:
 
@@ -187,7 +187,7 @@ auto.fit.arima.regression(serie, xregs, ic = c("aicc", "aic", "bic"),
 
 *Nota*: No se mostrará la información del ajuste de cada modelo para cada variable regresora.
 
-**Ejemplo de uso**: Logaritmo de las ventas semanales y el precio de patatas fritas *Bluebird* de NUeva Zelanda. El período de observación es de 104 semanas (desde el 20 de Septiembre de 1988 hasta el 10 de Septiembre de 2000).
+**Ejemplo de uso**: Logaritmo de las ventas semanales y el precio de patatas fritas *Bluebird* de Nueva Zelanda. El período de observación es de 104 semanas (desde el 20 de Septiembre de 1988 hasta el 10 de Septiembre de 2000).
 
 ```{r}
 load("data/patatas.dat")
@@ -219,17 +219,31 @@ confirmed <- read.csv("data/covid-global-confirmed-bycountry.csv")
 deaths <- read.csv("data/covid-global-deaths-bycountry.csv")
 recovered <- read.csv("data/covid-global-recovered-bycountry.csv")
 
-confirmed_spain <- ts(confirmed$Spain, frequency=7)
+# Spain data
 deaths_spain <- ts(deaths$Spain, frequency=7)
+confirmed_spain <- ts(confirmed$Spain, frequency=7)
 recovered_spain <- ts(recovered$Spain, frequency=7)
 
-confirmed_france <- ts(confirmed$France, frequency=7)
-confirmed_england <- ts(confirmed$United.Kingdom, frequency=7)
-
+# France data
 deaths_france <- ts(deaths$France, frequency=7)
-deaths_england <- ts(deaths$United.Kingdom, frequency=7)
+confirmed_france <- ts(confirmed$France, frequency=7)
+recovered_france <- ts(recovered$France, frequency=7)
 
-regresoras <- ts(cbind(confirmed_spain, recovered_spain), frequency=7)
+# England data
+deaths_england <- ts(deaths$United.Kingdom, frequency=7)
+confirmed_england <- ts(confirmed$United.Kingdom, frequency=7)
+recovered_england <- ts(recovered$United.Kingdom, frequency=7)
+
+# Portugal data
+deaths_portugal <- ts(deaths$Portugal, frequency=7)
+confirmed_portugal <- ts(confirmed$Portugal, frequency=7)
+recovered_portugal <- ts(recovered$Portugal, frequency=7)
+
+regresoras <- ts(cbind(confirmed_spain, recovered_spain, 
+                       deaths_france, confirmed_france, recovered_france,
+                       deaths_england, confirmed_england, recovered_england,
+                       deaths_portugal, confirmed_portugal, recovered_portugal),
+                 frequency=7)
 
 ajuste <- auto.fit.arima.regression(deaths_spain, regresoras)
 ```

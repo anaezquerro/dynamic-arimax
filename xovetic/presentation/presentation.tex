@@ -1,0 +1,154 @@
+\documentclass[10pt]{beamer}
+\usetheme[secheader]{Boadilla}
+\usepackage{amssymb,amsmath}
+\usepackage[utf8]{inputenc}
+
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks = true,
+    linkcolor = blue,
+    urlcolor = blue
+}
+
+\usepackage[capitalise, noabbrev, nameinlink]{cleveref}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{makecell}
+
+% -------- Portada ---------
+\title{Automatic covariates selection in dynamic regression models with application to COVID-19 evolution}
+
+\author{
+    Ana Ezquerro \inst{1} 
+    \and 
+    Germán Aneiros \inst{2}
+    \and 
+    Manuel Oviedo de la Fuente \inst{3}
+}
+\institute{
+   \inst{1} University of A Coruña, \texttt{ana.ezquerro@udc.es}
+\and
+    \inst{2} Grupo MODES, Departamento de Matemáticas, University of A Coruña, CITIC \\ \texttt{german.aneiros@udc.es}
+\and
+    \inst{3} Grupo MODES, Departamento de Matemáticas, University of A Coruña, CITIC \\ \texttt{manuel.oviedo@udc.es}
+}
+
+\date{Congreso XoveTIC 2022}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}
+    \frametitle{Introduction}
+        The \textbf{linear dynamic regression model} defines the linear dependence between a stochastic process $Y_t$ and a set of processes $\mathcal{X} =  \{ X_t^{(1)}, ..., X_t^{(m)} \}$:
+
+        \[  Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \cdots \beta_m X_{t-r_m}^{(m)} + \eta_t
+        \]
+
+        constrained to $r_i\geq 0$ for $i=1,...,m$ and $\eta_t \sim \text{ARMA}(p,q)$\footnote{here we denote the well-known AutoRegressive Moving Average model as ARMA.}.
+
+
+
+        \begin{itemize}
+            \item \cite{cryer2008time} proposed the \textit{prewhitening} as a technique for removing spurious correlation between processes in order to detect linear correlation.
+            \item We propose a forward-selection method that iteratively adds regressor variables (from a set of candidates) $Y_t$ is \textit{significantly} dependent with (assuming $Y_t$ is known and fixed). 
+            \item Widespread application in financial, economic, political and biomedical fields.
+            \item \textbf{Procedure}: analyze the mutual impact of several variables in order to define mathematical relationships and use them in forecasting.
+        \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Prewhitening}
+
+    \cite{cryer2008time} states a linear correlation between two processes $X_t$ and $Y_t$ exists for some $k\leq 0$ if and only if 
+    
+    \[ \rho_k(\ddot{X}_t, \ddot{Y}_t) \qquad \text{is statistically significant,} \] 
+
+    \begin{itemize}
+        \item $\rho_k(X_t^{(1)}, X_t^{(2)})$ is the cross-correlation function between processes $X_t^{(1)}$ and $X_t^{(2)}$ lagged $k$ moments.
+        \item $\ddot{X_t}$ and $\ddot{Y}_t$ are obtained via some linear filter application to $X_t$ and $Y_t$, respectively, ensuring one of them is white noise and the other is a stationary process (\textit{prehitening}).
+    \end{itemize}
+
+    \begin{block}{}
+        Our proposal:
+        \begin{itemize}
+            \item Iteratively adds in the model significant covariates with their respective lags that optimize some information criterion (IC) of the resultant residuals.
+            \item Uses the \textbf{residuals} of the last model created (by adding covariates) to check the existence of correlation between the dependent variable and a \textbf{new covariate candidate}.
+        \end{itemize}
+    \end{block}
+
+\end{frame}
+
+\begin{frame}{Example of spurious correlation and prewhitening}
+    \begin{figure}
+        \includegraphics[scale=0.35]{example prewhitening.pdf}
+    \end{figure}
+    
+\end{frame}
+
+\begin{frame}{Methodology}
+    
+
+    Let $Y_t$ be the dependent variable and $\mathcal{X}$ the set of covariates candidates. Thus, selection proceeds as follows:
+    
+    \begin{enumerate}
+        \item Initialization. Consider $X_t^\text{best}$ as the variable (lagged $r$ moments) that minimizes de IC of the constructed model with $Y_t$:
+        \[ X_t^\text{best} = \underset{X_t\in\mathcal{X}}{\arg\min} \Bigg\{ \text{IC}\Bigg( Y_t = \beta_0 + \beta_1 X_{t-r}^\text{best} + \eta_t \Bigg)\Bigg\} \] 
+        \item Iteration. Use the regression errors ($\eta_t$) of the last model created to check if some correlation exists between the rest of the covariates not yet added to the model. Find again the ``best'' variable and add it to the model to obtain a new IC value. If this value improves the last one achieved, repeat this step. If it does not, stop the iteration.
+        \item Finalization. The errors of the last fitted model must satisfy the stationary property. In other case, consider the regular differentiation of all data and start again the procedure.
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Example of the iterative selection step by step}
+
+
+    \begin{table}
+        \centering\small
+        \setlength{\tabcolsep}{5pt}
+        \caption{From \href{https://www.worldometers.info/coronavirus/}{worldmeters} source, model the evolution of \textit{exitus} cases in Spain due to the COVID-19 considering other country data} 
+        \label{covid19}
+    
+        \begin{tabular}{|l|ccc|}
+            \hline
+            \textbf{Covariate}           & \textbf{Lag}  & \textbf{Coefficient est. (s.e)} & \textbf{AICc}          \\ 
+            \hline 
+            \texttt{confirmed\_spain}    & 0             & 0.0064 (0.0009)                 & 5596.641             \\ 
+            \texttt{recovered\_portugal} & -1            & -0.0337 (0.0063)                & 5550.963             \\
+            \texttt{recovered\_france}   & 0             & 0.0646 (0.0142)                 & 5540.655             \\
+            \texttt{confirmed\_france}   & 0             & -0.0033 (0.0007)                & 5522.699             \\
+            \texttt{confirmed\_portugal} & -13           & 0.0395 (0.0085)                 & 5504.169             \\
+            \texttt{recovered\_spain}    & -7            & -0.0669 (0.0176)                & 5500.573             \\ 
+            \hline 
+        \end{tabular}
+    \end{table}    
+    \begin{itemize}
+        \item \textbf{Note}: This model was fitted with differentiated data.
+        \item \texttt{deaths\_england}, \texttt{deaths\_france}, \texttt{confirmed\_england}, \texttt{recovered\_england} and \texttt{deaths\_portugal} were not included in the model.
+        \item The residuals of the model follow an ARMA$(1,1)\times (1,1)_7$ with parameters:
+        \[
+        \begin{array}{l}
+            \phi_1=0.9724 (0.0131), \ \theta_1=-0.7508 (0.0370), \\
+            \Phi_1=0.6958 (0.1892), \ \Theta_1=-0.5512 (0.2215)
+        \end{array}
+        \] 
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Results of multiple simulations}
+
+    
+    
+\end{frame}
+
+% add figure about iteratively
+
+
+\begin{frame}
+    \bibliography{bibliography}
+    \bibliographystyle{apalike}
+\end{frame}
+
+\end{document}  

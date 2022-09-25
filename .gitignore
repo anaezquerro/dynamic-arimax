@@ -41,6 +41,7 @@ vignettes/*.pdf
 
 # folders
 figures/
+Documentación_files/
 .DS_Store
 
 
@@ -65,3 +66,7 @@ figures/
 *.synctex.gz(busy)
 *.pdfsync
 *.toc
+*.bbl
+*.blg
+*.pdf
+*.hd

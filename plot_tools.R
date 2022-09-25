@@ -115,7 +115,7 @@ plot_residuals <- function(ajuste, title='Gráfico secuencia de los residuos', a
                           y=c(stat, -stat), yend=c(stat, -stat))
   acf_plot <- plot_ly() %>% 
     add_bars(x=c(acfs$lag), y=c(acfs$acf), type='bar', 
-             width=(max(acfs$lag) - min(acfs$lag))/100, 
+             width=(max(acfs$lag) - min(acfs$lag))/200, 
              marker=list(color='grey')) %>%
     add_segments(data=sig_lines, x=~x, xend=~xend, y=~y, yend=~yend,
                  line=list(color='blue', dash='dot'), showlegend=F,

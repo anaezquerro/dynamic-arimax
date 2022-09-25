@@ -1,4 +1,5 @@
-
+library(polynom)
+eval(parse("auto_fitting.R", encoding="UTF-8"))
 
 generate.ar.coef <- function(order) {
     if (order <= 0) {stop('Order coefficients must be greater than 0')}
@@ -10,14 +11,15 @@ generate.ar.coef <- function(order) {
     while (!valid) {
         # Primero se generan los valores (media cero porque pueden ser no significativos)
         if (order > 1) {
-            first_values <- rnorm(order-1, 0, 0.2)
+            sign <- ifelse(runif(order-1) < 0.2, -1, 1)
+            first_values <- sign*rnorm(order-1, 0.3, 0.3)
         } else {
             first_values <- c()
         }
         
         # Después se genera el valor del último coeficiente (que debe ser significativo)
-        sign <- ifelse(runif(1) < 0.5, -1, 1)
-        last_value <- sign*rnorm(1, 0.4, 0.05) 
+        sign <- ifelse(runif(1) < 0.1, -1, 1)
+        last_value <- sign*rnorm(1, 0.8, 0.05) 
         
         # Se concatenan los dos vectores
         ar <- append(first_values, last_value)
@@ -38,13 +40,14 @@ generate.ma.coef <- function(order) {
     
     while (!valid) {
         if (order > 1) {
-            first_values <- rnorm(order-1, 0, 0.07)
+            sign <- ifelse(runif(order-1) < 0.8, -1, 1)
+            first_values <- sign*rnorm(order-1, 0.3, 0.07)
         } else {
             first_values <- c()
         }
         
         sign <- ifelse(runif(1) < 0.1, -1, 1)
-        last_value <- sign*rnorm(1, 0.4, 0.05)
+        last_value <- sign*rnorm(1, 0.6, 0.05)
         
         ma <- append(first_values, last_value)
         
@@ -93,7 +96,7 @@ sim.arima <- function(model=list(p=0, d=0, q=0), n=1000, with.constant=FALSE,
     # En caso de que no haya órdenes, devolver ruido gaussiano
     if ((model$p==0) && (model$q==0) && (model$d==0)) {
         x <- c + a
-        return(x)
+        return(list(X=x, ar=NULL, ma=NULL, c=c, d=0))
     } 
     
     # Generación de las muestras iniciales de X (aleatorias)
@@ -120,6 +123,7 @@ sim.arima <- function(model=list(p=0, d=0, q=0), n=1000, with.constant=FALSE,
     if (!'ma' %in% names(model) && (model$q > 0)) {
         model$ma <- generate.ma.coef(model$q)
     }
+    
     
     if (model$q > 0) {
         apply.ma <- function(a, t) {
@@ -152,6 +156,25 @@ sim.arima <- function(model=list(p=0, d=0, q=0), n=1000, with.constant=FALSE,
         }
     }
     
-    result <- list(ar=model$ar, ma=model$ma, c=c, X=X)
+    result <- list(ar=model$ar, ma=model$ma, c=c, X=X, d=model$d)
     return(result)
+    
+    
+    # Comprobación
+    # ajuste <- auto.fit.arima(result$X, show_info=F)
+    # 
+    # if (is_valid(ajuste)) {
+    #     valid <- (model$p == ajuste$arma[1]) & (model$q == ajuste$arma[2]) & (model$d == ajuste$arma[6]) & 
+    #         (('intercept' %in% names(ajuste$coef)) == with.constant)
+    # } else {
+    #     valid <- F
+    # }
+    # 
+    # 
+    # if (valid) {
+    #     return(result)
+    # } else {
+    #     return(sim.arima(model, n, with.constant, x_ini_mean))
+    # }
+    
 }

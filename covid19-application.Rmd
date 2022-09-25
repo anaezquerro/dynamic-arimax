@@ -195,7 +195,7 @@ Thus, our selection approach confirms the existence of correlation between the c
 
 ## Study on vaccination data aggregated by group of ages
 
-Once we have confirmed the existence of relation between the COVID-19 confirmed cases and vaccination progress in Catalonia, it might be relevant to investigate if the vaccination of some group of ages have more or less impact in the COVID-19 evolution. Since our database provides us of grouped vaccination data, we can launch again the selection function withe the same configuration and interpret its result.
+Once we have confirmed the existence of relation between the COVID-19 confirmed cases and vaccination progress in Catalonia, it might be relevant to investigate if the vaccination of some group of ages have more or less impact in the COVID-19 evolution. Since our database provides us of grouped vaccination data, we can launch again the selection function with the same configuration and interpret its result.
 
 ```{r}
 sarscov2 <- ts(cataluna$sarscov2)
