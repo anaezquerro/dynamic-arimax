@@ -47,25 +47,6 @@ generate_lags <- function() {
     return(lags)
 }
 
-check_covariate <- function(covariate) {
-    if (ncol(ajuste$xreg) == 1) {
-        return(covariate %in% ajuste$history$var)
-    } else {
-        return( 
-            (covariate %in% ajuste$history$var) &
-                (covariate %in% names(ajuste$coef[ajuste$coef != 0]))
-        )
-    }
-}
-
-check_lag <- function(covariate, correct_lag) {
-    return(as.numeric(
-        correct_lag == as.numeric(ajuste$history$lag[ajuste$history$var == covariate])
-    )
-    )
-}
-
-
 
 
 
@@ -79,9 +60,13 @@ lag_right <- 0
 ics <- c('aic', 'bic', 'aicc')
 stationary_methods <- c('auto.arima', 'adf.test')
 
-ics_results <- sapply(ics, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0), simplify=F)
-stmethods_results <- sapply(stationary_methods, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0), simplify=F)
-
+results <- list()
+for (stmethod in stationary_methods) {
+    results[[stmethod]] <- list()
+    for (ic in ics) {
+        results[[stmethod]][[ic]] <- list(TP=0, TN=0, FP=0, FN=0, lag_right=0)
+    }
+}
                             
 generate_covariate <- function(parinfo) {
     stationary <- parinfo$stationary
@@ -94,19 +79,31 @@ generate_covariate <- function(parinfo) {
     xreg <- sim.arima(model_orders, n, F)
     return(xreg)
 }
-update_result <- function(ic, statmet, metric, value=1) {
-    ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
-    print(ics_results[[ic]][[metric]])
-    print(ics_results)
-    stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
-}
 
-
-#' Primer caso. Utilizando errores estacionarios
-for (i in 1:m) {
-    cat(paste0(stri_dup('-', 80), '\n'))
-    cat(paste0('Ejecutando la simulación ', i, '/', m, '\n'))
+simulate <- function() {
     
+    
+    check_covariate <- function(covariate) {
+        if (is.null(ajuste$xreg) || all(is.na(ajuste$history))) {
+            return(F)
+        }
+        
+        if (ncol(ajuste$xreg) == 1) {
+            return(covariate %in% ajuste$history$var)
+        } else {
+            return( 
+                (covariate %in% ajuste$history$var) &
+                    (covariate %in% names(ajuste$coef[ajuste$coef != 0]))
+            )
+        }
+    }
+    
+    check_lag <- function(covariate, correct_lag) {
+        return(as.numeric(
+            correct_lag == as.numeric(ajuste$history$lag[ajuste$history$var == covariate])
+        )
+        )
+    }
     
     # generate covariates and residuals
     local_variables <- ls()
@@ -122,72 +119,87 @@ for (i in 1:m) {
     clusterEvalQ(cl, library(forecast))
     clusterEvalQ(cl, library(stringr))
     
-    
     covariates <- c('X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'residuals')
-    covarinfo <- sapply(covariates, function(x) list(seed=sample(0:10000, 1), stationary=(x=='residuals')), simplify=F)
+    covarinfo <- sapply(covariates, function(x) list(seed=sample(0:10000, 1), stationary=F), simplify=F)
     
     xregs <- parLapply(cl, covarinfo, generate_covariate)
     stopCluster(cl)
-    cat(paste0('Se han generado todas las covariables\n'))
-    print(xregs)
+    
+    
+    # display information about covariates
+    for (covar in covariates) {
+        cat(paste0(' - ', covar, '~ARIMA(', length(xregs[[covar]]$ar), ',', 
+                   xregs[[covar]]$d, ',', length(xregs[[covar]]$ma), ')\n'))
+    }
     
     X1 <- xregs[['X1']]$X; X2 <- xregs[['X2']]$X; X3 <- xregs[['X3']]$X
     X4 <- xregs[['X4']]$X; X5 <- xregs[['X5']]$X; X6 <- xregs[['X6']]$X
     residuals <- xregs[['residuals']]$X
+    
     
     # generate coefficients and lags
     betas <- generate_coefficients()
     lags <- as.list(setNames(generate_lags(), c('X1', 'X2', 'X3')))
     beta0 <- betas[1]; beta1 <- betas[2]; beta2 <- betas[3]; beta3 <- betas[4]
     lag1 <- lags[['X1']]; lag2 <- lags[['X2']]; lag3 <- lags[['X3']]
-    cat(paste0('Se han generado los coeficientes y los retardos\n'))
-
+    
     # construct the dependent variable
     Y <- beta0 + beta1 * lag(X1, -lag1) + beta2 * lag(X2, -lag2) + beta3 * lag(X3, -lag3) + residuals
     xregs <- cbind(X1, X2, X3, X4, X5, X6)
-    print(head(xregs), row.names=F)
     
-    # launch the selection method
     
     for (ic in ics) {
         for (statmet in stationary_methods) {
-            
             ajuste <- NULL
             while (!is_valid(ajuste)) {
-                cat(paste0('Ajustando un modelo [ic=', ic, ', statmethod=', statmet, ']\n'))
-                ajuste <- auto.fit.arima.regression(Y, xregs, ic=ic, stationary_method=statmet, show_info=F)
+                ajuste <- auto.fit.arima.regression(Y, xregs, ic=ic, stationary_method = statmet, show_info=F)
             }
+            cat(paste0('Se ha ajustado un modelo [ic=', ic, ', statmet=', statmet, ']\n'))
             print(ajuste, row.names=F)
-
             
+            
+            # update results
             for (covar in c('X1', 'X2', 'X3')) {
                 if (check_covariate(covar)) {
                     # update TP values
-                    ics_results[[ic]][['TP']] <- ics_results[[ic]][['TP']] + 1
-                    stmethods_results[[statmet]][['TP']] <- stmethods_results[[statmet]][['TP']] + 1
+                    results[[statmet]][[ic]][['TP']] <- results[[statmet]][[ic]][['TP']] + 1
                     
                     # update lag right values
-                    ics_results[[ic]][['lag_right']] <- ics_results[[ic]][['lag_right']] + check_lag(covar, lags[[covar]]) 
-                    stmethods_results[[statmet]][['lag_right']] <- stmethods_results[[statmet]][['lag_right']] + check_lag(covar, lags[[covar]]) 
+                    results[[statmet]][[ic]][['lag_right']] <- results[[statmet]][[ic]][['lag_right']] + check_lag(covar, lags[[covar]]) 
                     
                 } else {
-                    ics_results[[ic]][['FN']] <- ics_results[[ic]][['FN']] + 1
-                    stmethods_results[[statmet]][['FN']] <- stmethods_results[[statmet]][['FN']] + 1
+                    results[[statmet]][[ic]][['FN']] <- results[[statmet]][[ic]][['FN']] + 1
                 }
             }
             
             for (covar in c('X4', 'X5', 'X6')) {
                 if (!check_covariate(covar)) {
-                    ics_results[[ic]][['TN']] <- ics_results[[ic]][['TN']] + 1
-                    stmethods_results[[statmet]][['TN']] <- stmethods_results[[statmet]][['TN']] + 1
+                    results[[statmet]][[ic]][['TN']] <- results[[statmet]][[ic]][['TN']] + 1
                 } else {
-                    ics_results[[ic]][['FP']] <- ics_results[[ic]][['FP']] + 1
-                    stmethods_results[[statmet]][['FP']] <- stmethods_results[[statmet]][['FP']] + 1
+                    results[[statmet]][[ic]][['FP']] <- results[[statmet]][[ic]][['FP']] + 1
                 }
-            }        
+            }            
             
         }
+    }
+
+    return(T)
+    
+}
+
+
+
+#' Primer caso. Utilizando errores estacionarios
+for (i in 1:m) {
+    cat(paste0(stri_dup('-', 80), '\n'))
+    cat(paste0('Ejecutando la simulación ', i, '/', m, '\n'))
+    
+    result <- try(simulate())
+    while (class(result) == 'try-error') {
+        
+        result <- try(simulate(), T)
         
     }
+    
     
 }

@@ -50,8 +50,9 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             if (typeof(ajustes[[key]]) == 'character') {
                 cat(ajustes[[key]])
             } else {
-                cat(paste0('Se ha probado con la variable ', colnames(xregs)[as.numeric(key)], 
-                           ' [ic=', ajustes[[key]][[ic]], ', lag=', ajustes[[key]]$optimal_lag, ']\n'))
+                cat(paste0('Covariate ', colnames(xregs)[as.numeric(key)], 
+                           ' has been tested [ic=', ajustes[[key]][[ic]], 
+                           ', lag=', ajustes[[key]]$optimal_lag, ']\n'))
             }
         }
     }
@@ -84,7 +85,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
             alpha=alpha, max_lag=max_lag, method=stationary_method)
         
         if (is.na(optimal_lag)) {
-            return(paste0('No se ha podido encontrar un retardo significativo para ', xreg_name, '\n'))
+            return(paste0('Significative correlation with lag<=0 could not be found for ', xreg_name, '\n'))
         }
         
         # Creación de la matriz de tipo `ts` con la variables respuesta, variables 
@@ -96,14 +97,14 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
                                  d=NA, D=NA, alpha=alpha, show_info=F)
         
         if (!is_valid(ajuste)) {
-            return(paste0('No se ha podido ajustar un modelo para ', xreg_name, '\n'))
+            return(paste0('The optimizer could not fit a model for ', xreg_name, '\n'))
         }
         
         if (! 
             ((xreg_name %in% names(ajuste$coef)) || 
              ('xreg' %in% names(ajuste$coef)))
             ) {
-            return(paste0('No se ha podido incluir la variable ', xreg_name, ' en el modelo\n'))
+            return(paste0('The optimizer could not add ', xreg_name, ' to the model\n'))
         }
         
         ajuste$optimal_lag <- optimal_lag
@@ -185,8 +186,8 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         best_xreg_lag <- global_fit$optimal_lag
         
         if (show_info) {
-            cat(paste0('Se ha añadido la variable regresora ', 
-                       colnames(xregs)[best_xreg], ' [', ic, '=', global_ic, ', lag=', best_xreg_lag, ']\n'))
+            cat(paste0('Covariate ', colnames(xregs)[best_xreg], 
+                       ' has been added [', ic, '=', global_ic, ', lag=', best_xreg_lag, ']\n'))
             print(global_fit, row.names=F)
             cat(paste0(stri_dup('-', PAD), '\n'))
         }
@@ -198,7 +199,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         response <- residuals(global_fit, type='regression')
     }
     
-    if (show_info) { cat('No se añaden más variables\n') }
+    if (show_info) { cat('No more variables will be added\n') }
     
     
     # Una vez finalizado el algoritmo de selección se puede detener el cluster 
@@ -211,8 +212,8 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     if (!any(is.na(model_history)) && (sum(global_fit$arma[6:7]) > 0)) {
         
         if (show_info) {
-            cat(paste0('El modelo global no tiene errores estacionarios\n', 
-                       'Se intenta ajustar uno que sí los tenga\n'))
+            cat(paste0('The global model does not have stationary errors\n', 
+                       'Trying to adjust a model that do have stationary errors\n'))
         }
         
         data_new <- construct.data(model_history, serie, xregs, new_xreg_name = NULL, 
@@ -229,7 +230,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
         if (show_info) {
             cat(paste0(stri_dup('-', PAD), '\n'))
             cat(paste0('|', 
-                       str_pad(paste0('Histórico de variables añadidas al modelo (ndiff=', ndiff, ')'), width=PAD-2, 
+                       str_pad(paste0('Historical of added covariates to the model (ndiff=', ndiff, ')'), width=PAD-2, 
                                side='both', pad=' '), '|\n'))
             cat(paste0(stri_dup('-', PAD), '\n'))
             print(model_history, row.names=F)
@@ -255,9 +256,9 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     if (ndiff < 3) {
         
         if (show_info) {
-            cat(paste0('No se ha podido encontrar un modelo válido con errores estacionarios\n',
-                       'Se aplica una diferenciación regular (ndiff=', ndiff+1, 
-                       ') y se vuelve a llamar a la función\n'))
+            cat(paste0('No valid model with stationary errors could be optimized\n',
+                       'Applying regular differentiation (ndiff=', ndiff+1, 
+                       ') and calling again the function\n'))
             cat(paste0(stri_dup('-', PAD), '\n'))
             cat(paste0(stri_dup('-', PAD), '\n'))
             
@@ -277,7 +278,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     
     # En el caso de que tampoco haya un ARIMA válido sin regresoras
     if (!is_valid(global_fit)) {
-        warning('Ningún modelo es válido')
+        warning('No valid model could be optimized')
         return(NA)
     } 
     
@@ -286,7 +287,7 @@ auto.fit.arima.regression <- function(serie, xregs, ic='aicc', alpha=0.05,
     
     if (show_info) {
         cat(paste0(stri_dup('-', PAD), '\n'))
-        cat(paste0('Modelo (sin variables regresoras cond ndiff=', ndiff, ') [', ic, '=', global_ic, ']\n'))
+        cat(paste0('Model without covariates  (ndiff=', ndiff, ') [', ic, '=', global_ic, ']\n'))
         cat(paste0(stri_dup('-', PAD), '\n'))
         print(global_fit, row.names=F)
         cat(paste0(stri_dup('-', PAD), '\n'))

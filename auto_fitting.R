@@ -1,9 +1,15 @@
 
-PAD <- 86
+#' README:
+#' This script contains the necessary functions to automatically fit ARIMA and 
+#' ARIMAX models with statistically significative coefficients with valid 
+#' residuals (i.e. with zero mean and independent)
 
-#' Ajuste automático de un modelo ARIMA o un modelo ARIMAX
+
+
+PAD <- 86  # display-info parameter 
+
+#' Automatic fitting of ARIMA or ARIMAX model  
 #' 
-#'
 #' @param serie : Serie temporal sobre la que se quiere ajustar un modelo ARIMA.
 #' @param xregs : Conjunto de variables regresoras que inciden en `serie`. 
 #' @param ic : Criterio de información para evaluar los ajustes obtenidos sobre la 
