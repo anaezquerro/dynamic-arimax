@@ -1,15 +1,35 @@
 \documentclass[10pt]{beamer}
-\usetheme[secheader]{Boadilla}
+\usetheme{Boadilla}
+\usecolortheme{seahorse}
 \usepackage{amssymb,amsmath}
 \usepackage[utf8]{inputenc}
 
 \usepackage{xcolor}
 \usepackage{hyperref}
+
+
+
+% beamer style 
+
+\definecolor{xoveticblue}{HTML}{3cafc2} % UBC Blue (primary)
+\definecolor{xoveticorange}{HTML}{e58923}
+\definecolor{xoveticdarkorange}{HTML}{d97b27}
 \hypersetup{
     colorlinks = true,
-    linkcolor = blue,
-    urlcolor = blue
+    linkcolor = xoveticblue,
+    urlcolor = xoveticblue
 }
+
+
+\setbeamercolor{palette primary}{bg=xoveticorange,fg=white}
+\setbeamercolor{palette secondary}{bg=xoveticblue,fg=white}
+\setbeamercolor{palette tertiary}{bg=xoveticdarkorange, fg=white}
+\setbeamercolor{palette quaternary}{bg=xoveticorange, fg=white}
+\setbeamercolor{structure}{fg=xoveticorange} % itemize, enumerate, etc
+\setbeamercolor{section in toc}{fg=xoveticorange} % TOC sections
+\setbeamercolor{subsection in head/foot}{bg=xoveticorange,fg=white}
+
+
 
 \usepackage[capitalise, noabbrev, nameinlink]{cleveref}
 \usepackage{float}
@@ -17,21 +37,21 @@
 \usepackage{makecell}
 
 % -------- Portada ---------
-\title{Automatic covariates selection in dynamic regression models with application to COVID-19 evolution}
+\title[\textcolor{white}{Automatic covariates selection in DRM}]{Automatic covariates selection in dynamic regression models with application to COVID-19 evolution}
 
-\author{
+\author[Ana Ezquerro, Germán Aneiros, Manuel Oviedo]{
     Ana Ezquerro \inst{1} 
     \and 
     Germán Aneiros \inst{2}
     \and 
-    Manuel Oviedo de la Fuente \inst{3}
+    Manuel Oviedo \inst{3}
 }
-\institute{
+\institute[]{
    \inst{1} University of A Coruña, \texttt{ana.ezquerro@udc.es}
 \and
-    \inst{2} Grupo MODES, Departamento de Matemáticas, University of A Coruña, CITIC \\ \texttt{german.aneiros@udc.es}
+    \inst{2} CITIC, Grupo MODES, Departamento de Matemáticas, University of A Coruña, \\ \texttt{german.aneiros@udc.es}
 \and
-    \inst{3} Grupo MODES, Departamento de Matemáticas, University of A Coruña, CITIC \\ \texttt{manuel.oviedo@udc.es}
+    \inst{3} CITIC, Grupo MODES, Departamento de Matemáticas, University of A Coruña \\ \texttt{manuel.oviedo@udc.es}
 }
 
 \date{Congreso XoveTIC 2022}
@@ -47,7 +67,7 @@
         \[  Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \cdots \beta_m X_{t-r_m}^{(m)} + \eta_t
         \]
 
-        constrained to $r_i\geq 0$ for $i=1,...,m$ and $\eta_t \sim \text{ARMA}(p,q)$\footnote{here we denote the well-known AutoRegressive Moving Average model as ARMA.}.
+        constrained to $r_i\geq 0$ for $i=1,...,m$ and $\eta_t \sim \text{ARMA}(p,q)$\footnote{here we denote the AutoRegressive Moving Average model as ARMA.}.
 
 
 
@@ -71,8 +91,8 @@
         \item $\ddot{X_t}$ and $\ddot{Y}_t$ are obtained via some linear filter application to $X_t$ and $Y_t$, respectively, ensuring one of them is white noise and the other is a stationary process (\textit{prehitening}).
     \end{itemize}
 
-    \begin{block}{}
-        Our proposal:
+    \begin{block}{Our proposal}
+        \vspace{0.2em}
         \begin{itemize}
             \item Iteratively adds in the model significant covariates with their respective lags that optimize some information criterion (IC) of the resultant residuals.
             \item Uses the \textbf{residuals} of the last model created (by adding covariates) to check the existence of correlation between the dependent variable and a \textbf{new covariate candidate}.

@@ -39,10 +39,10 @@ Ana Ezquerro$^{1}$, Germán Aneiros$^{2}$, Manuel Oviedo$^{3}$
 
 $^{1}$University of A Coruña, \texttt{ana.ezquerro@udc.es}
 
-$^{2}$Grupo MODES, Departamento de Matemáticas, University of A Coruña, CITIC, \texttt{german.aneiros@udc.es}
+$^{2}$CITIC, Grupo MODES, Departamento de Matemáticas, University of A Coruña, \texttt{german.aneiros@udc.es}
 
 
-$^{3}$Grupo MODES, Departamento de Matemáticas, University of A Coruña, CITIC, \texttt{manuel.oviedo@udc.es}
+$^{3}$CITIC, Grupo MODES, Departamento de Matemáticas, University of A Coruña, \texttt{manuel.oviedo@udc.es}
 
 
 \begin{center}
@@ -190,9 +190,17 @@ Due to the impact of COVID-19 around the world, we use this method to formalize 
     \end{tabular}
 \end{table}    
 
-Table \ref{covid19model}\footnote{where \texttt{vac1218}, \texttt{vac1845}, \texttt{vac4565}, \texttt{vac6580} denote the vaccination in population from 12, 18, 45 and 65 up to 18, 45, 65 and 80 years (exclusive), respectively, and \texttt{vac80} denotes the vaccination in population from 80 years.} resumes the algorithm trace and the order of covariates addition to the model.
+Table \ref{covid19model} resumes the algorithm trace and the order of covariates addition to the model. The covariates named \texttt{vac1218}, \texttt{vac1845}, \texttt{vac4565}, \texttt{vac6580} correspond the vaccination data in population from 12, 18, 45 and 65 up to 18, 45, 65 and 80 years old (exclusive), and \texttt{vac80} corresponds the vaccination in population from 80 years. We can analyze the vaccination has a negative impact in the expansion of COVID19, specifically, the vaccination of working-age population. 
 
+\begin{center}
+    \textbf{Future work}
+\end{center}
+Our approach has considered DRM covariates modelable by ARIMA models, which successfully covers a wide real-life applications. However, other cases might be considered, such as adding functional variables and discrete variables to the set of candidates. 
 
+\begin{center}
+    \textbf{Acknowledgements}
+\end{center}
+To Banco Santander for the scholarships offered in 2021/2022, which helped the investigation of this proposal, and to \textit{Departamento de Matemáticas} of University of A Coruña.
 
 
 \bibliographystyle{plain}

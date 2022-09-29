@@ -8,67 +8,320 @@
 
 PAD <- 86  # display-info parameter 
 
-#' Automatic fitting of ARIMA or ARIMAX model  
+
+
+#' **Automatic fitting of ARIMA or ARIMAX model**
 #' 
-#' @param serie : Serie temporal sobre la que se quiere ajustar un modelo ARIMA.
-#' @param xregs : Conjunto de variables regresoras que inciden en `serie`. 
-#' @param ic : Criterio de información para evaluar los ajustes obtenidos sobre la 
-#' serie de tiempo.
-#' @param d : Valor del orden de diferenciación regular. Por defecto `NA` (se escoge de 
-#' forma automática siguiendo el criterio de información).
-#' @param D : Valor del orden de diferenciación estacional. Por defecto `NA` (se escoge 
-#' de forma automática siguiendo el criterio de información).
-#' @param alpha : Nivel de significación para los tests estadísticos (chequear 
-#' independencia, media nula y normalidad de los residuos y significancia de los 
-#' coeficientes ajustados).
-#' @param show_info : Valor booleano que indica si se muestra o no por pantalla los 
-#' modelos que se van ajustando.
+#' Implementaton of the ARIMA or ARIMAX model selection that optimizes an 
+#' information criterion selected and satisifies that:
+#' 
+#' 1) All coefficients are statistically significative.
+#' 2) Model residuals have zero mean and are independent.
+#' 
+#' 
+#' @param serie [ts]: Univariate time series to fit an ARIMA model with. If 
+#' `xregs` is not `NULL` it will act as the dependent variable.
+#' @param xregs [mts]: Matrix of time series that act as covariates in an 
+#' ARIMAX model. By default, `NULL`, meaning that an ARIMA will be fitted with 
+#' `serie`.
+#' @param ic [character]: Information criterion to be used in ARIMA orders' 
+#' selection. Options available are the same as in `forecast::auto.arima()` 
+#' function: `ic`, `bic` or `aicc`.
+#' @param d [numeric]: Value of the diferentiation order. By default `NA`, thus 
+#' there is no restriction about the $d$ order value.
+#' @param D [numeric]: Value fo the seasonal diferentiation order. By default 
+#' `NA`, thus there is no restriction about the $D$ order value.
+#' @param alpha [numeric]: Significance level of hypothesis tests used for 
+#' checking independence, zero mean and normality of residuals, and significance 
+#' of estimated coefficients.
+#' @param show_info [boolean]: Boolean value for displaying or not displaying 
+#' the historical of fitted models.
+#' 
+#' @returns Fitted ARIMA/ARIMAX model where all estimated coefficients are 
+#' significative and residuals are independent and with zero mean. In case it 
+#' is no possible to optimize a model, the function returns `NA`.
 #'
-#' @return Ajuste del modelo ARIMA cuyos coeficientes son significativos y cuyos residuos 
-#' cumplen las hipótesis de independencia y media nula. En caso de que no sea posible  
-#' ajustar este modelo, se devuelve `NA`.
-#' @export
-#' 
 auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05, 
                            show_info=T, plot_result=F) {
     
+    # ------------------------------- assertions -------------------------------
     if (class(serie) != 'ts') {
-        stop('[auto.fit.arima] El argumento `serie` debe ser de tipo ts')
+        stop('[auto.fit.arima] TypeError. Parameter `serie` must be `ts`')
     }
     if (!is.null(xregs) && !any(c('mts', 'ts') %in% class(xregs))) {
-        stop('[auto.fit.arima] El argumento `xregs` debe ser de tipo mts o ts')
+        stop(paste0('[auto.fit.arima] ', 
+                    'TypeError. Parameter `xregs` must be `ts` or `mts`'))
     }
-
-    # Selección del mejor modelo con la función auto.arima guardando el historial 
+    # --------------------------------------------------------------------------
+    
+    # Save the output of auto.arima() function
     trace <- capture.output({
         aux <- suppressWarnings(
-            auto.arima(serie, xreg=xregs, d=d, D=D, seasonal=frequency(serie) > 1, 
-                       ic=ic, max.d=4, max.D=3, stepwise=F, approximation=F, trace = T) 
+            auto.arima(serie, xreg=xregs, d=d, D=D, seasonal=frequency(serie)>1, ic=ic, max.d=4, 
+                       max.D=3, stepwise=F, approximation=F, trace=T) 
         )
     })
     con    <- textConnection(trace)
     models <- read.table(con, sep=':')
     models <- models[1:nrow(models)-1,]
-    names(models) <- c('Modelo', ic)
+    names(models) <- c('Model', ic)
     models <- sapply(models, trimws)
     models <- as.data.frame(models)
     
-    # Bucle global que irá ajustando los modelos siguiendo el orden del criterio escogido
+    # Global loop. It will be fitting models following the order (ascendent) of the IC
     while (nrow(models) > 0) {
         
-        # Tomamos el modelo con el mejor valor para el criterio escogido (ic)
+        # Get the model with the minimum IC 
         best_model <- models[which.min(models[[ic]]), 1]
         
-        # Obtenemos sus órdenes de la cadena de caracteres
-        orders <- parse.orders(best_model, reg=!is.null(xregs), seas=frequency(serie)>1)
+        # Get its orders from the string with parse.orders()
+        orders <- parse.orders(best_model, seasonal=frequency(serie)>1, 
+                               regressor=!is.null(xregs))
         
-        # Intentamos estimar el modelo. Si no es posible optimizarlo (ajuste == NA), entonces 
-        # lo eliminamos del trace recogido y probamos con el siguiente.
-        ajuste <- fit.model(serie, xreg=xregs, orders)
+        # Try to fit ARIMA(X) model with fit.model()
+        fitted_model <- fit.model(serie, xreg=xregs, orders)
         
-        if (!is_valid(ajuste)) {
+        # If the result is not valid (with is_valid() function), remove the
+        # corresponding description of `models` and continue the selection
+        if (!is_valid(fitted_model)) {
             models <- models[-c(which.min(models[[ic]])), ]
             next
+        }
+        if (show_info) {
+            cat(paste0(stri_dup('-', PAD), '\n'))
+            print(fitted_model, row.names=F)
+            cat(paste0(stri_dup('-', PAD), '\n'))
+        }
+        
+        # Otherwise, continue by deleting non-significative coefficients with 
+        # fit.coefficients() function
+        fitted_model <- fit.coefficients(fitted_model, alpha, show_info)
+        
+        # Again, the model might not be "valid"
+        if (!is_valid(fitted_model)) {
+            models <- models[-c(which.min(models[[ic]])),]
+            next
+        }
+        
+        # ----------------------------------------------------------------------
+        # Here, if no optimization problem has been found, the fitted ARIMA(X) 
+        # is valid, so we must check the residuals' properties
+        # 1) Independence (LjungBox)
+        H <- ljungbox_lag(fitted_model$residuals)
+        ljungbox <- Box.test(fitted_model$residuals, lag=H, type='Ljung-Box', 
+                             fitdf=sum(fitted_model$coef!=0)
+                    )$p.value
+        
+        # 2) Zero mean (t-test)
+        ttest    <- t.test(fitted_model$residuals, mu=0)$p.value
+        
+        # 3) Normality (JarqueBera and Shapiro-Wilks)
+        testJB   <- jarque.bera.test(
+            fitted_model$residuals[!is.na(fitted_model$residuals)])$p.value
+        testSW   <- shapiro.test(fitted_model$residuals)$p.value
+        
+        if (ljungbox < alpha) {
+            models <- models[-c(which.min(models[[ic]])),] 
+            if (show_info) {
+                cat(paste0(
+                    'Independence hypothesis of residuals is rejeceted\n',
+                    'Model is not valid. Trying with the next model following ', 
+                    ic, '\n', stri_dup('-', PAD, '\n')
+                    )
+                )
+            }
+            next
+        }
+        if (ttest < alpha) {
+            models <- models[-c(which.min(models[[ic]])),]    # eliminamos el modelo del historial
+            if (show_info) {
+                cat(paste0(
+                    'Zero mean hypothesis of residuals is rejected\n',
+                    'Model is not valid. Trying with the next model following ',
+                    ic, '\n', stri_dup('-', PAD, '\n')
+                ))
+            }
+            next
+        }
+        
+        if (any(c(testJB, testSW) < alpha)) {
+            if (show_info) {
+                cat(paste0(
+                    'Normality hypothesis is rejected\nModel is valid ',
+                    'but forecasting asuming normality is not available'
+                ))
+            }
+        }
+        
+        # Here, the fitted model and its residuals are valid, so exit
+        break
+    }
+    
+    # Check that the model is valid. These lines are needed since it is possible 
+    # that no fitted valid model can be optimized
+    if (!is_valid(fitted_model))  {
+        if (show_info) {
+            warning(
+                'No valid model could be fitted for this time serie'
+            )
+        }
+        return(NA)   # in this case, return NA
+    }
+    
+    
+    # --------------------------------------------------------------------------
+    # Here the function states that the fitted model is valid
+    if (show_info) {
+        cat(paste0(stri_dup('-', PAD), '\n'))
+        cat(paste0('|', str_pad('FINAL MODEL', width=PAD-2, side='both', pad=' '), '|\n'))
+        cat(paste0(stri_dup('-', PAD), '\n'))
+        print(fitted_model, row.names=F)
+    }
+    
+    # It is possible to add to the result some plots (time series and residuals)
+    if (plot_result) {
+        fitted_model$fig_serie <- suppressWarnings(plot_serie(serie, alpha=alpha))
+        fitted_model$fig_residuals <- suppressWarnings(
+            plot_residuals(fitted_model, alpha=alpha)
+            )
+    }
+    return(fitted_model)
+}
+
+
+
+
+#' **Fitting of ARIMA or ARIMAX model trying with multiple optimizators**
+#'
+#' @param serie [ts]: Univariate time series to fit an ARIMA model with. If 
+#' `xregs` is not `NULL` it will act as the dependent variable.
+#' @param orders [list]: Information about the orders of the ARIMA model. It 
+#' corresponds to the output of `parse.orders()`. It must have the following 
+#' items:
+#' * `regular`: vector of regular orders (p, d, q).
+#' * `seasonal`: vector of seasonal orders (P, D, Q).
+#' * `include_mean`: boolean value indicating if a constant value is included 
+#' in the definition of the model.
+#' @param xregs [mts]: Matrix of time series that act as covariates in an 
+#' ARIMAX model. By default, `NULL`, meaning that an ARIMA will be fitted with 
+#' `serie`.
+#' @param fixed [vector]: Boolean vector which masks the coefficients set to 0.
+#' @param show_info [boolean]: Indicates if information about the fitted models 
+#' is displayed in the console. 
+#'
+#' @returns Fitted model or `NA` in case no optimizer could fit coefficients of 
+#' the model.
+#'
+fit.model <- function(serie, orders, xregs=NULL, fixed=NULL, show_info=F) {
+    
+    # ------------------------------- ASSERTIONS -------------------------------
+    total_params <- get.total.params(orders, xregs)
+    
+    if (!is.null(fixed) && (length(fixed) != total_params)) { 
+        stop('`fixed` size is not the same as the number of parameters')
+    }
+    # --------------------------------------------------------------------------
+    
+    optimizers <- c('BFGS', 'Nelder-Mead', 'CG', 'L-BFGS-B', 'SANN', 'Brent')
+    
+    for (opt in optimizers) {
+        fitted_model <- try(
+            suppressWarnings(
+                Arima(serie, xreg=xregs, order=orders$regular, 
+                      seasonal=orders$seasonal, fixed=fixed, 
+                      include.mean=orders$include_mean)),
+            silent=T)
+        
+        if (is_valid(fitted_model)) {
+            return(fitted_model)
+        }
+    }
+    
+    # Here no optimizer could estimate the parameters of the ARIMA(X) model
+    if (show_info) {
+        warning('No model could be optimized\n') 
+    }
+    return(NA)
+}
+
+
+#' **Coefficients estimation in ARIMA or ARIMAX model**
+#' 
+#' Checks the significance of all ARIMA(X) coefficients and iteratively sets 
+#' those non significative to zero and readjusts the model.
+#' 
+#' @param fitted_model [Arima]: Initial fitted ARIMA model. Its coefficients 
+#' might be non significative.
+#' @param orders [list]: Model orders. Returned value of `parse.orders()`.
+#' @param alpha [numeric]: Significance level used for hypothesis tests of 
+#' coefficients.
+#' @param show_info [boolean]: Indicates showing or not showing the parameters 
+#' that are set to zero and the resulting fit.
+#'
+#' @return Fitted ARIMA(X) model (if it exists) with significative coefficients.
+#'
+fit.coefficients <- function(ajuste, alpha=0.05, show_info=T) {
+    
+    stat <- qnorm(1-alpha/2)                  # estadístico de contraste
+    fixed <- rep(NA, length(ajuste$coef))     # valor inicial de los coeficientes
+    
+    
+    while (TRUE) {
+        
+        # Obtención de los nombres de los coeficientes ARMA
+        # arma_coefs_names <- get_arma_coefs_names(ajuste)
+        
+        # En caso de que no haya coeficientes ARIMA, se devuelve el ajuste 
+        # if (is.null(arma_coefs_names)) { return(ajuste) }
+        
+        # Obtenemos los valores de dichos coeficientes y sus desviaciones típicas
+        # arma_coefs <- ajuste$coef[arma_coefs_names]
+        # arma_coefs_sd <- suppressWarnings(sqrt(diag(ajuste$var.coef[arma_coefs_names, arma_coefs_names])))
+        # res <- abs(arma_coefs) < stat*arma_coefs_sd
+        
+        # if (!any(res)) { # en caso de que todos sean significativos, se para el bucle
+        #   break
+        # }
+        # 
+        # # Configuración del vector fixed
+        # remov <- names(which.min(abs(arma_coefs)/(stat*arma_coefs_sd)))
+        # fixed[names(ajuste$coef) == remov] <- 
+        
+        
+        remov <- get_nonsig(ajuste, alpha)
+        fixed[names(ajuste$coef) == remov] <- 0 
+        if (is.na(remov)) { # no hay ningún coeficiente que retirar
+            return(ajuste)
+        }
+        
+        if (show_info) {
+            cat(paste0('Es necesario retirar del modelo el parámetro: ', remov, '\n'))
+        }
+        
+        # Actualización de los órdenes
+        orders_fixed_update <- update_orders(ajuste, fixed)
+        orders <- orders_fixed_update$orders
+        fixed <- orders_fixed_update$fixed
+        
+        # Actualización de los coeficientes de regresión
+        # xregs_update <- update_xregs(ajuste, fixed)
+        # 
+        # if (!is.null(xregs_update)) {
+        #     fixed <- fixed[!(names(ajuste$coef) == remov)]
+        #     xregs <- xregs_update
+        # }
+        
+        
+        # Ajuste del nuevo modelo
+        ajuste <- fit.model(ajuste$x, xregs=ajuste$xreg, orders=orders, fixed=fixed)
+        
+        # Si no se puede optimizar el modelo se devuelve NA
+        if (!is_valid(ajuste)) { 
+            if (show_info) {
+                cat(paste0('No se ha podido optimizar el modelo ARIMA(', string_concat(orders$regular), ')[',
+                           string_concat(orders$seasonal), '] con esta configuración\n'))
+            }
+            return(NA) 
         }
         
         if (show_info) {
@@ -76,77 +329,81 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
             print(ajuste, row.names=F)
             cat(paste0(stri_dup('-', PAD), '\n'))
         }
-        
-        # Chequeamos si en el modelo hay parámetros que se pueden sacar
-        ajuste <- fit.coefficients(ajuste=ajuste, alpha=alpha, show_info=show_info)
-        
-        if (!is_valid(ajuste)) {
-            models <- models[-c(which.min(models[[ic]])),]
-            next
-        }
-        
-        # Si no ha habido problemas de optimización, realiazmos el análisis de residuos
-        H <- ljungbox_lag(ajuste$residuals)
-        ljungbox <- Box.test(ajuste$residuals, lag=H, type='Ljung-Box', 
-                             fitdf=sum(ajuste$coef!=0))$p.value
-        ttest    <- t.test(ajuste$residuals, mu=0)$p.value
-        testJB   <- jarque.bera.test(ajuste$residuals[!is.na(ajuste$residuals)])$p.value
-        testSW   <- shapiro.test(ajuste$residuals)$p.value
-        
-        if (ljungbox < alpha) {
-            models <- models[-c(which.min(models[[ic]])),]  # eliminamos el modelo del historial
-            if (show_info) {
-                cat(paste0('Falla la hipótesis de independencia de los residuos: p-valor=', ljungbox, 
-                           '\nModelo no válido. Probamos con el siguiente modelo vía criterio ', ic, '\n'))
-                cat(paste0(stri_dup('-', PAD), '\n'))
-            }
-            next
-        }
-        if (ttest < alpha) {
-            models <- models[-c(which.min(models[[ic]])),]    # eliminamos el modelo del historial
-            if (show_info) {
-                cat(paste0('Falla la hipótesis de media nula de los residuos: p-valor=', ttest,
-                           '\nModelo no válido. Probamos con el siguiente modelo vía criterio ', ic, '\n'))
-                cat(paste0(stri_dup('-', PAD), '\n'))
-            }
-            next
-        }
-        
-        if (any(c(testJB, testSW) < alpha)) {
-            if (show_info) {
-                cat(paste0('Falla la hipótesis de normalidad sobre los residuos.\n', 
-                           'El modelo es válido pero los intervalos de predicción basados en la\n',
-                           'dist. asintótica no son válidos\n')) 
-            }
-        }
-        
-        # Si se llega al final del bucle, el modelo es válido
-        break
-    }
-    
-    # Comprobamos que el ajuste que hemos obtenido es válido
-    if (!is_valid(ajuste))  {
-        if (show_info) {
-            warning('No se ha podido encontrar ningún modelo para la serie temporal')
-        }
-        return(NA)
-    }
-    
-    # En caso de que si se haya obtenido un modelo válido, se muestra en pantalla y se devuelve
-    if (show_info) {
-        cat(paste0(stri_dup('-', PAD), '\n'))
-        cat(paste0('|', str_pad('MODELO FINAL', width=PAD-2, side='both', pad=' '), '|\n'))
-        cat(paste0(stri_dup('-', PAD), '\n'))
-        print(ajuste, row.names=F)
-    }
-    
-    if (plot_result) {
-        fig_serie     <- suppressWarnings(plot_serie(serie, alpha=alpha))
-        fig_residuals <- suppressWarnings(plot_residuals(ajuste, alpha=alpha))
-        result        <- list(ajuste=ajuste, fig_serie=fig_serie, fig_residuals=fig_residuals)
-        return(result)
     }
     return(ajuste)
+}
+
+
+
+#' ----------------------------- AUXILIAR FUNCTIONS-----------------------------
+#' In this section of the script we provide some auxiliar functions that are not 
+#' related to ARIMA(X) model fitting, but were needed to implement the selection 
+#' method
+#' -----------------------------------------------------------------------------
+
+#' Obtains ARIMA orders given the description of the trace of 
+#' `forecast::auto.arima()`. Test with
+#' 
+#' > parse.orders('ARIMA(2,1,0)(0,1,3)[12] with non-zero mean', seasonal=T)
+#' --------------------------
+#' $regular
+#' [1] 2 1 0
+#' 
+#' $seasonal
+#' [1] 0 1 3
+#' 
+#' $include_mean
+#' [1] TRUE
+#' --------------------------
+#' 
+#' @param description [character]: Description of the ARIMA model (provided by 
+#' `forecast::auto.arima()`).
+#' @param seasonal [boolean]: Indicates if the model has a seasonal component.
+#' @param regressor [boolean]: Indicates if the model has covariates (i.e. if 
+#' it is an ARIMAX).
+#' @param returns A List object with the vector of regular orders, seasonal 
+#' orders and if it includes a constant value (only if it has not seasonal 
+#' component and no regressor variables).
+parse.orders <- function(description, seasonal=F, regressor=F) {
+    info <- gsub('[\\(\\)]', '', 
+                 regmatches(description, gregexpr('\\(.*?\\)', description))[[1]])
+    regular_order <- unlist(lapply(strsplit(info[1], ','), as.double))
+    if (length(info) > 1) {
+        seasonal_order <- unlist(lapply(strsplit(info[2], ','), as.double))
+    } else {seasonal_order <- c(0, 0, 0)}
+    
+    
+    if (grepl('non-zero mean', description, fixed=T) || grepl('drift', description, fixed=T) || regressor) {
+        include_mean <- TRUE
+    } else {
+        include_mean <- FALSE
+    }
+    
+    if (regressor && seasonal) {
+        include_mean <- FALSE
+    }
+    
+    orders <- list(regular=regular_order, seasonal=seasonal_order, 
+                   include_mean=include_mean)
+    return(orders)
+}
+
+
+#' Calculates the number of parameters/coefficients needed given the orders of 
+#' the ARIMA(X) model and the matrix of regressor variables.
+#' @param orders [list]: List of ARIMA(X) model (object returned by 
+#' `parse.orders()`).
+#' @param xregs [mts]: Matrix of covariates of the ARIMAX. By default `NULL`, 
+#' meaning that there are no covariates.
+#' @return The number of coefficients/parameters of the ARIMA or ARIMAX model.
+get.total.params <- function(orders, xregs=NULL) {
+    total_params <- sum(
+        orders$regular[1], orders$regular[3],
+        orders$seasonal[1], orders$seasonal[3],
+        ifelse(orders$include_mean, 1, 0),
+        ifelse(is.null(xregs), 0, ifelse(is.null(ncol(xregs)), 1, ncol(xregs)))
+    )
+    return(total_params)
 }
 
 
@@ -224,6 +481,8 @@ update_order <- function(order, remov_coefs) {
     }
     return(order)
 }
+
+
 
 
 
@@ -310,91 +569,6 @@ update_xregs <- function(ajuste, fixed) {
 }
 
 
-#' Ajuste de los coeficientes de un modelo ARIMA
-#'
-#' @param ajuste Ajuste inicial de un modelo ARIMA. Sus coeficientes pueden no ser 
-#' significativos.
-#' @param orders Órdenes del modelo.
-#' @param alpha Nivel de significación estadística para los tests de significancia de los 
-#' coeficientes.
-#' @param show_info Valor booleano que indica si mostrar o no los parámetros que se vayan 
-#' fijando a cero y los ajustes resultantes.
-#'
-#' @return Modelo ajustado (si existe) con coeficientes significativos.
-#' @export
-#'
-fit.coefficients <- function(ajuste, alpha=0.05, show_info=T) {
-  
-  stat <- qnorm(1-alpha/2)                  # estadístico de contraste
-  fixed <- rep(NA, length(ajuste$coef))     # valor inicial de los coeficientes
-  
-  
-  while (TRUE) {
-    
-    # Obtención de los nombres de los coeficientes ARMA
-    # arma_coefs_names <- get_arma_coefs_names(ajuste)
-    
-    # En caso de que no haya coeficientes ARIMA, se devuelve el ajuste 
-    # if (is.null(arma_coefs_names)) { return(ajuste) }
-    
-    # Obtenemos los valores de dichos coeficientes y sus desviaciones típicas
-    # arma_coefs <- ajuste$coef[arma_coefs_names]
-    # arma_coefs_sd <- suppressWarnings(sqrt(diag(ajuste$var.coef[arma_coefs_names, arma_coefs_names])))
-    # res <- abs(arma_coefs) < stat*arma_coefs_sd
-    
-    # if (!any(res)) { # en caso de que todos sean significativos, se para el bucle
-    #   break
-    # }
-    # 
-    # # Configuración del vector fixed
-    # remov <- names(which.min(abs(arma_coefs)/(stat*arma_coefs_sd)))
-    # fixed[names(ajuste$coef) == remov] <- 
-      
-      
-    remov <- get_nonsig(ajuste, alpha)
-    fixed[names(ajuste$coef) == remov] <- 0 
-    if (is.na(remov)) { # no hay ningún coeficiente que retirar
-        return(ajuste)
-    }
-      
-    if (show_info) {
-      cat(paste0('Es necesario retirar del modelo el parámetro: ', remov, '\n'))
-    }
-    
-    # Actualización de los órdenes
-    orders_fixed_update <- update_orders(ajuste, fixed)
-    orders <- orders_fixed_update$orders
-    fixed <- orders_fixed_update$fixed
-    
-    # Actualización de los coeficientes de regresión
-    # xregs_update <- update_xregs(ajuste, fixed)
-    # 
-    # if (!is.null(xregs_update)) {
-    #     fixed <- fixed[!(names(ajuste$coef) == remov)]
-    #     xregs <- xregs_update
-    # }
-
-    
-    # Ajuste del nuevo modelo
-    ajuste <- fit.model(ajuste$x, xregs=ajuste$xreg, orders=orders, fixed=fixed)
-    
-    # Si no se puede optimizar el modelo se devuelve NA
-    if (!is_valid(ajuste)) { 
-      if (show_info) {
-          cat(paste0('No se ha podido optimizar el modelo ARIMA(', string_concat(orders$regular), ')[',
-                    string_concat(orders$seasonal), '] con esta configuración\n'))
-          }
-      return(NA) 
-    }
-    
-    if (show_info) {
-        cat(paste0(stri_dup('-', PAD), '\n'))
-        print(ajuste, row.names=F)
-        cat(paste0(stri_dup('-', PAD), '\n'))
-    }
-  }
-  return(ajuste)
-}
 
 
 string_concat <- function(arr, delimiter=',') {
@@ -490,53 +664,6 @@ update.order <- function(order, fixed, mask) {
 
 
 
-#' Ajuste de un modelo ARIMA probando de forma iterativa con múltiples optimizadores 
-#' para encontrar un ajuste
-#'
-#' @param serie Serie temporal sobre la que se ajusta el ARIMA.
-#' @param orders Órdenes del modelo ARIMA.
-#' @param xregs Variables regresoras del modelo.
-#' @param fixed Vector máscara con los coeficientes que se deben fijar a 0.
-#' @param show_info Valor booleano que indica si se deben mostrar o no los 
-#' modelos que se vayan ajustando.
-#'
-#' @returns Ajuste o `NA` en caso de que no sea posible optimizar un modelo.
-#' @export
-#'
-fit.model <- function(serie, orders, xregs=NULL, fixed=NULL, show_info=F) {
-    total_params <- sum(orders$regular[1], orders$regular[3],
-                        orders$seasonal[1], orders$seasonal[3],
-                        ifelse(orders$include_mean, 1, 0),
-                        ifelse(is.null(xregs), 0, ifelse(is.null(ncol(xregs)), 1, ncol(xregs))))
-    
-    if (!is.null(fixed) && (length(fixed) != total_params)) { 
-        print(fixed, row.names=F)
-        print(orders, row.names=F)
-        print(total_params, row.names=F)
-        print(head(xregs), row.names=F)
-        stop('Tamaño incorrrecto de fixed')
-    }
-    
-    optimizers <- c('BFGS', 'Nelder-Mead', 'CG', 'L-BFGS-B', 'SANN', 'Brent')
-    
-    for (opt in optimizers) {
-    ajuste <- try(
-      suppressWarnings(
-        Arima(serie, xreg=xregs, order=orders$regular, seasonal=orders$seasonal, 
-            fixed=fixed, include.mean = orders$include_mean)),
-      silent=T)
-    if (is_valid(ajuste)) {
-        if (is.null(xregs)) {
-            ajuste$call$xreg <- NULL
-        }
-        return(ajuste)
-    }
-    }
-    if (show_info) { warning('No se ha podido optimizar un modelo\n') }
-    return(NA)
-}
-
-
 #' Comprobación de que un ajuste ha sido correctamente optimizado
 #' 
 #' @param ajuste Ajuste a comprobar.
@@ -577,34 +704,5 @@ ljungbox_lag <- function(serie) {
 }
 
 
-#' Obtener los órdenes de un modelo ARIMA a través de una cadena de caracteres
-#'
-#' @param cadena Cadena de caracteres describiendo el modelo ARIMA (encabezado del 
-#' output del objeto Arima). Por ejemplo: ARIMA(1, 0, 2) with non-zero mean.
-#' @param reg Valor booleano indicando si se trata de un modelo con o sin variables 
-#' regresoras.
-#' @param seas Valor booleano indicando si se trata de un modelo con o sin componente 
-#' estacional.
-parse.orders <- function(cadena, reg=F, seas=F) {
-    info <- gsub('[\\(\\)]', '', regmatches(cadena, gregexpr('\\(.*?\\)', cadena))[[1]])
-    regular_order <- unlist(lapply(strsplit(info[1], ','), as.double))
-    if (length(info) > 1) {
-        seasonal_order <- unlist(lapply(strsplit(info[2], ','), as.double))
-    } else {seasonal_order <- c(0, 0, 0)}
-    
-    
-    if (grepl('non-zero mean', cadena, fixed=T) || grepl('drift', cadena, fixed=T) || reg) {
-        include_mean <- TRUE
-    } else {
-        include_mean <- FALSE
-    }
-    
-    if (reg && seas) {
-        include_mean <- FALSE
-    }
-    
-    orders <- list(regular=regular_order, seasonal=seasonal_order, 
-                   include_mean=include_mean)
-    return(orders)
-}
+
 

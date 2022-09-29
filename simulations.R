@@ -24,7 +24,7 @@ library(parallel)
 
 ics <- c('aicc')
 n <- 5000
-m <- 100
+m <- 20
 stationary_methods <- c('auto.arima', 'adf.test')
 
 
@@ -80,7 +80,7 @@ generate_covariate <- function(parinfo) {
     return(xreg)
 }
 
-simulate <- function() {
+simulate <- function(results) {
     
     
     check_covariate <- function(covariate) {
@@ -194,10 +194,10 @@ for (i in 1:m) {
     cat(paste0(stri_dup('-', 80), '\n'))
     cat(paste0('Ejecutando la simulación ', i, '/', m, '\n'))
     
-    result <- try(simulate())
-    while (class(result) == 'try-error') {
+    results <- try(simulate(results), T)
+    while (class(results) == 'try-error') {
         
-        result <- try(simulate(), T)
+        result <- try(simulate(results), T)
         
     }
     
