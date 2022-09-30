@@ -1,8 +1,6 @@
-eval(parse("plot_tools.R", encoding="UTF-8"))
 eval(parse("arima_simulation.R", encoding="UTF-8"))
-eval(parse("auto_fitting.R", encoding="UTF-8"))
-eval(parse("auto_selection.R", encoding="UTF-8"))
-eval(parse("forecasting.R", encoding="UTF-8"))
+eval(parse("auto-fit.R", encoding="UTF-8"))
+eval(parse("auto-select.R", encoding="UTF-8"))
 
 # Librerías de series temporales
 library(fpp2)
@@ -24,7 +22,7 @@ library(parallel)
 
 ics <- c('aicc')
 n <- 5000
-m <- 20
+m <- 100
 stationary_methods <- c('auto.arima', 'adf.test')
 
 
@@ -152,7 +150,7 @@ simulate <- function(results) {
         for (statmet in stationary_methods) {
             ajuste <- NULL
             while (!is_valid(ajuste)) {
-                ajuste <- auto.fit.arima.regression(Y, xregs, ic=ic, stationary_method = statmet, show_info=F)
+                ajuste <- drm.select(Y, xregs, ic=ic, st_method = statmet, show_info=F)
             }
             cat(paste0('Se ha ajustado un modelo [ic=', ic, ', statmet=', statmet, ']\n'))
             print(ajuste, row.names=F)
@@ -183,7 +181,7 @@ simulate <- function(results) {
         }
     }
 
-    return(T)
+    return(results)
     
 }
 
@@ -194,12 +192,12 @@ for (i in 1:m) {
     cat(paste0(stri_dup('-', 80), '\n'))
     cat(paste0('Ejecutando la simulación ', i, '/', m, '\n'))
     
-    results <- try(simulate(results), T)
-    while (class(results) == 'try-error') {
+    partial_results <- try(simulate(results))
+    while (class(partial_results) == 'try-error') {
         
-        result <- try(simulate(results), T)
+        partial_results <- try(simulate(results), T)
         
     }
-    
-    
+    results <- partial_results
+
 }

@@ -34,8 +34,8 @@ PAD <- 86  # display-info parameter
 #' @param alpha [numeric]: Significance level of hypothesis tests used for 
 #' checking independence, zero mean and normality of residuals, and significance 
 #' of estimated coefficients.
-#' @param show_info [boolean]: Boolean value for displaying or not displaying 
-#' the historical of fitted models.
+#' @param show_info [boolean]: Displaying or not displaying the historical of 
+#' fitted models.
 #' 
 #' @returns Fitted ARIMA/ARIMAX model where all estimated coefficients are 
 #' significative and residuals are independent and with zero mean. In case it 
@@ -260,77 +260,58 @@ fit.model <- function(serie, orders, xregs=NULL, fixed=NULL, show_info=F) {
 #'
 #' @return Fitted ARIMA(X) model (if it exists) with significative coefficients.
 #'
-fit.coefficients <- function(ajuste, alpha=0.05, show_info=T) {
+fit.coefficients <- function(fitted_model, alpha=0.05, show_info=T) {
     
-    stat <- qnorm(1-alpha/2)                  # estadístico de contraste
-    fixed <- rep(NA, length(ajuste$coef))     # valor inicial de los coeficientes
+    stat <- qnorm(1-alpha/2)                  # pivot
+    fixed <- rep(NA, length(fitted_model$coef))     # initial fixed vector
     
     
+    # Start an endless loop to search non-significative coefficients
     while (TRUE) {
         
-        # Obtención de los nombres de los coeficientes ARMA
-        # arma_coefs_names <- get_arma_coefs_names(ajuste)
+        # Obtain the "first" non significative coefficient and set its 
+        # corresponding value in `fixed` to zero
+        remov <- get.nonsignificative(fitted_model, alpha)
         
-        # En caso de que no haya coeficientes ARIMA, se devuelve el ajuste 
-        # if (is.null(arma_coefs_names)) { return(ajuste) }
-        
-        # Obtenemos los valores de dichos coeficientes y sus desviaciones típicas
-        # arma_coefs <- ajuste$coef[arma_coefs_names]
-        # arma_coefs_sd <- suppressWarnings(sqrt(diag(ajuste$var.coef[arma_coefs_names, arma_coefs_names])))
-        # res <- abs(arma_coefs) < stat*arma_coefs_sd
-        
-        # if (!any(res)) { # en caso de que todos sean significativos, se para el bucle
-        #   break
-        # }
-        # 
-        # # Configuración del vector fixed
-        # remov <- names(which.min(abs(arma_coefs)/(stat*arma_coefs_sd)))
-        # fixed[names(ajuste$coef) == remov] <- 
-        
-        
-        remov <- get_nonsig(ajuste, alpha)
-        fixed[names(ajuste$coef) == remov] <- 0 
-        if (is.na(remov)) { # no hay ningún coeficiente que retirar
-            return(ajuste)
+        if (is.na(remov)) {         # all coefficients are significative
+            return(fitted_model)
         }
+        
+        fixed[names(fitted_model$coef) == remov] <- 0 
         
         if (show_info) {
-            cat(paste0('Es necesario retirar del modelo el parámetro: ', remov, '\n'))
+            cat(paste0('Removing parameter ', remov, 
+                       ' since it is not significative\n'))
         }
         
-        # Actualización de los órdenes
-        orders_fixed_update <- update_orders(ajuste, fixed)
+        # Update the orders of the model add the fixed vector. This lines are 
+        # needed since, if some coefficients are set to zero, some orders of 
+        # the ARIMA(X) might change
+        orders_fixed_update <- update.orders(fitted_model, fixed)
         orders <- orders_fixed_update$orders
         fixed <- orders_fixed_update$fixed
         
-        # Actualización de los coeficientes de regresión
-        # xregs_update <- update_xregs(ajuste, fixed)
-        # 
-        # if (!is.null(xregs_update)) {
-        #     fixed <- fixed[!(names(ajuste$coef) == remov)]
-        #     xregs <- xregs_update
-        # }
+        # Fit a new ARIMA(X) model
+        fitted_model <- fit.model(fitted_model$x, xregs=fitted_model$xreg, 
+                            orders=orders, fixed=fixed)
         
-        
-        # Ajuste del nuevo modelo
-        ajuste <- fit.model(ajuste$x, xregs=ajuste$xreg, orders=orders, fixed=fixed)
-        
-        # Si no se puede optimizar el modelo se devuelve NA
-        if (!is_valid(ajuste)) { 
+        # Check if the new fitted model is valid
+        if (!is_valid(fitted_model)) { 
             if (show_info) {
-                cat(paste0('No se ha podido optimizar el modelo ARIMA(', string_concat(orders$regular), ')[',
-                           string_concat(orders$seasonal), '] con esta configuración\n'))
+                cat(paste0('No ARIMA model could be optimized\n'))
             }
             return(NA) 
         }
         
         if (show_info) {
             cat(paste0(stri_dup('-', PAD), '\n'))
-            print(ajuste, row.names=F)
+            print(fitted_model, row.names=F)
             cat(paste0(stri_dup('-', PAD), '\n'))
         }
     }
-    return(ajuste)
+    
+    # Once no more coefficients are set to zero, return the resulting model
+    return(fitted_model)
 }
 
 
@@ -373,7 +354,8 @@ parse.orders <- function(description, seasonal=F, regressor=F) {
     } else {seasonal_order <- c(0, 0, 0)}
     
     
-    if (grepl('non-zero mean', description, fixed=T) || grepl('drift', description, fixed=T) || regressor) {
+    if (grepl('non-zero mean', description, fixed=T) || 
+        grepl('drift', description, fixed=T) || regressor) {
         include_mean <- TRUE
     } else {
         include_mean <- FALSE
@@ -408,45 +390,35 @@ get.total.params <- function(orders, xregs=NULL) {
 
 
 
-#' Obtener los órdenes del modelo ARIMA a partir de su ajuste
-#'
-#' @param ajuste Ajuste del modelo ARIMA.
-#'
-#' @return Lista con los órdenes regulares (`regular`), estacionales (`seasonal`) y una 
-#' variable booleana para indicar si se incluye media/constante (`include_mean`).
-#' @export
-#'
-get_orders <- function(ajuste) {
-  if (!('Arima' %in% class(ajuste))) {
-    stop('El argumento `ajuste` debe ser un objeto Arima')
-  }
-  
-  p <- ajuste$arma[1]
-  q <- ajuste$arma[2]
-  P <- ajuste$arma[3]
-  Q <- ajuste$arma[4]
-  d <- ajuste$arma[6]
-  D <- ajuste$arma[7]
-  
-  include_mean <- any(c('mean', 'drift', 'intercept') %in% names(ajuste$coef))
-  orders <- list(regular=c(p, d, q), seasonal=c(P, D, Q), include_mean=include_mean)
-  return(orders)
-}
-
-
-update_orders <- function(ajuste, fixed) {
+#' Updates the orders of a fitted ARIMA/ARIMAX model given the vector `fixed` 
+#' that defines which coefficients are set to zero.
+#' 
+#' @param fitted_model [Arima]: Fitted ARIMA model.
+#' @param fixed [vector]: Vector mask that indicates which parameters of the 
+#' ARIMA(X) model are set to zero.
+#' @returns List object with new orders (item `$orders`) and an updated vector 
+#' `fixed` (item `$fixed`).
+#' 
+update.orders <- function(fitted_model, fixed) {
     
-    if (is.null(fixed)) {return(list(orders=get_orders(ajuste), fixed=NULL))}
-    if (all(is.na(fixed))) {return(list(orders=get_orders(ajuste), fixed=fixed))}
+    # Consider no coefficient has been set to zero
+    if (is.null(fixed) || all(is.na(fixed))) {
+        return(list(orders=get.orders(fitted_model), fixed=fixed))
+    }
     
-    remov_coefs <- names(ajuste$coef[!is.na(fixed)])
-    arma_orders <- ajuste$arma[1:4]
+    # Obtain coefficients names that are set to zero
+    remov_coefs <- names(fitted_model$coef[!is.na(fixed)])
+    arma_orders <- fitted_model$arma[1:4]
     patterns <- c('^ar\\d+', '^ma\\d+', '^sar\\d+', '^sma\\d+')
+    
+    # Variables where new values will be stored
     new_fixed <- c()
     new_orders <- arma_orders
     
+    # For each order (AR, MA, SAR, SMA), update its value and elements in the 
+    # vector fixed
     for (i in 1:4) {
-        new_order <- update_order(arma_orders[i], str_subset(remov_coefs, patterns[i]))
+        new_order <- update.order(arma_orders[i], str_subset(remov_coefs, patterns[i]))
         new_orders[i] <- new_order
         if (new_order > 0) {
             start_index <- ifelse(i>1, sum(arma_orders[1:i-1]), 0)
@@ -454,27 +426,72 @@ update_orders <- function(ajuste, fixed) {
         }
     }
     
+    # Detect if the ARIMA(X) constant value has been set to zero, update the 
+    # order and the vector fixed
     if (any(str_detect(remov_coefs, 'mean|drift|intercept')) ) {
         include_mean <- FALSE
         if (sum(arma_orders, 2) <= length(fixed)) {
-            new_fixed <- c(new_fixed, fixed[sum(arma_orders,2):length(fixed)])
+            new_fixed <- c(new_fixed, fixed[sum(arma_orders, 2):length(fixed)])
         }
     } else  {
-        include_mean <- any(str_detect(names(ajuste$coef), 'mean|drift|intercept'))
+        include_mean <- any(str_detect(names(fitted_model$coef), 'mean|drift|intercept'))
         if (sum(arma_orders) < length(fixed)) {
             new_fixed <- c(new_fixed, fixed[sum(arma_orders,1):length(fixed)])
         }
     }
     
-    new_orders <- list(regular=c(new_orders[1], ajuste$arma[6], new_orders[2]),
-                       seasonal=c(new_orders[3], ajuste$arma[7], new_orders[4]),
-                       include_mean=include_mean)
+    new_orders <- list(
+        regular=c(new_orders[1], fitted_model$arma[6], new_orders[2]),
+        seasonal=c(new_orders[3], fitted_model$arma[7], new_orders[4]),
+        include_mean=include_mean)
     
     return(list(orders=new_orders, fixed=new_fixed))
     
 }
 
-update_order <- function(order, remov_coefs) {
+
+
+#' 
+#' Obtain the orders of the ARIMA or ARIMAX model from the Arima object.
+#'
+#' @param fitted_model [Arima]: Fitted ARIMA(X) model.
+#' @returns Object List with the regular (`$regular`) and seasonal (`$seasonal`) 
+#' orders and a boolean variable indicating if a constant parameter is included 
+#' (`$include_mean`).
+#'
+get.orders <- function(fitted_model) {
+  if (!('Arima' %in% class(fitted_model))) {
+    stop('El argumento `fitted_model` debe ser un objeto Arima')
+  }
+  
+  p <- fitted_model$arma[1]
+  q <- fitted_model$arma[2]
+  P <- fitted_model$arma[3]
+  Q <- fitted_model$arma[4]
+  d <- fitted_model$arma[6]
+  D <- fitted_model$arma[7]
+  
+  include_mean <- any(c('mean', 'drift', 'intercept') %in% names(fitted_model$coef))
+  orders <- list(regular=c(p, d, q), seasonal=c(P, D, Q), include_mean=include_mean)
+  return(orders)
+}
+
+
+
+#' Updates an order given the names of the removed coefficients of that order.
+#' 
+#' @param order [numeric]: Order value of the ARIMA(X) model.
+#' @param remov_coefs [vector]: Vector of the removed coefficients of the given 
+#' order.
+#' @returns The updated order.
+#' 
+#' > update.order(4, 'ma4')
+#' --------------------------
+#' 3
+#' --------------------------
+#'
+
+update.order <- function(order, remov_coefs) {
     if (length(remov_coefs) == 0) {return(order)}
     while (as.character(order) %in% str_extract(remov_coefs, '\\d+')) {
         order <- order - 1
@@ -484,215 +501,65 @@ update_order <- function(order, remov_coefs) {
 
 
 
-
-
-
-#' Obtención de los coeficientes ARMA a chequear de un ajuste
-#'
-#' @param ajuste Ajuste ARIMA sobre el que se quieren obtener los nombres de los 
-#' coeficientes correspondientes a la parte ARMA (se excluyen coeficientes que se 
-#' correspondan con las variables regresoras en un mdoelo ARIMAX). Esto es, `ar`, `ma`, 
-#' `sar`, `sma` y, en caso de que d=0, se escoge `mean`, y en caso de que d=1, se escoge 
-#' `drift`.
-#'
-#' @return Vector con los nombres de los coeficientes que se deben chequear. En caso de 
-#' que no haya ninguno, se devuelve `NULL`.
-#' @export
-#'
-get_arma_coefs_names <- function(ajuste) {
-  if (!('Arima' %in% class(ajuste))) {
-    stop('El argumento `ajuste` debe ser un objeto Arima')
-  }
-  
-  # Obtenemos la máscara de los coeficientes ARMA
-  arma_coefs_mask <- sapply(names(ajuste$coef), str_detect, pattern=c('s?ma\\d+', 's?ar\\d+', 'mean', 'drift', 'intercept'))
-  
-  # En caso de que la máscara esté vacía esto indica que el modelo es un ARIMA(0, 0, 0)
-  if (length(arma_coefs_mask) == 0) { return(NULL) }
-  
-  # La máscara se calcula sobre cualquier nombre del coeficiente que cumpla algún pattern
-  arma_coefs_mask <- apply(arma_coefs_mask, 2, sum) == 1
-  
-  # Se retiran aquellos que ya sean iguales a 0
-  arma_coefs_mask <- arma_coefs_mask & (ajuste$coef != 0)
-  
-  # En caso de que ya no haya ningún coeficiente (todos están fijados a 0), se devuelve NULL
-  if (sum(arma_coefs_mask) == 0) { return(NULL) }
-  
-  # Se obtienen sus nombres
-  arma_coefs_names <- names(ajuste$coef[arma_coefs_mask])
-  
-  return(arma_coefs_names)
-}
-
-#' Obtención del coeficiente no significativo (considerando el p-valor)
+#' Obtains a non-significative coefficient (considering the pvalue of the 
+#' significance test)
 #' 
+#' @param fitted_model [Arima]: Fitted ARIMA or ARIMAX model.
+#' @param alpha [numeric]: Significance level for hypothesis tests.
 #'
-get_nonsig <- function(ajuste, alpha) {
+get.nonsignificative <- function(fitted_model, alpha) {
     stat <- qnorm(1-alpha/2)
     
-    # obtenemos los coeficientes que no están fijados a 0
-    coefs_mask <- ajuste$coef != 0
-    coefs <- ajuste$coef[coefs_mask]
+    # Obtain those those coefficients that are not set to zero
+    coefs_mask <- fitted_model$coef != 0
+    coefs <- fitted_model$coef[coefs_mask]
     
-    # si no hay ningún coeficiente con el primer requisito, devolver NA
+    # If there is no coefficient different than zero, return NA
     if (length(names(coefs)) == 0) {
         return(NA)
     }
-    # obtenemos una máscara de los coeficientes NO significativos
-    coefs_sd <- suppressWarnings(sqrt(diag(ajuste$var.coef)))
-    nonsig <- abs(coefs) < stat*coefs_sd        # TRUE -> no significativo
+    # Obtain a mask of those non-significative coefficients
+    coefs_sd <- suppressWarnings(sqrt(diag(fitted_model$var.coef)))
+    nonsig <- abs(coefs) < stat*coefs_sd        # TRUE -> non-significative
     
+    # Consider all coefficients are significative
     if (!any(nonsig)) {
         return(NA)
     }
     
-    
-    # obtenemos el coeficiente a fijar a 0
+    # Obtain the coefficient that must be set to zero (smaller pvalue)
     remov <- names(which.min(abs(coefs)/(stat*coefs_sd)))
-    
     return(remov)
 }
 
-update_xregs <- function(ajuste, fixed) {
-    
-    xregs_coefs_mask <- sapply(names(ajuste$coef), str_detect, pattern=c('s?ma\\d+', 's?ar\\d+', 'mean', 'drift', 'intercept'))
-    xregs_coefs_mask <- !(apply(xregs_coefs_mask, 2, sum) == 1)
-    remov_mask <- (!is.na(fixed)) & xregs_coefs_mask
-    
-    if (!any(remov_mask)) {
-        return(NULL)
-    }
-    
-    xregs <- ajuste$xreg[, names(ajuste$coef)[xregs_coefs_mask & (!remov_mask)]]
-    return(xregs)
-}
 
 
 
-
-string_concat <- function(arr, delimiter=',') {
-    result <- ''
-    for (item in arr[1:(length(arr)-1)]) {
-        result <- paste0(result, item, delimiter)
-    }
-    result <- paste0(result, arr[length(arr)])
-    return(result)
-}
-
-
-
-#' Actualización correcta de los órdenes del modelo cuando alguno se fija a 0
-#' Por ejemplo, cuando el parámetro ma2 de un ARMA(1, 2) se fija a cero, éste 
-#' pasa a ser un ARMA(1, 1), por tanto el objeto `orders` y `fixed` deben ser actualizados.
-#'
-#' @param orders Antiguos órdenes que deben ser actualizados.
-#' @param coefs_names Nombres de los coeficientes del modelo (es necesario saber esto 
-#' para poder interpretar bien el vector fixed y actualizarlo).
-#' @param fixed Máscara para indicar qué coeficientes (`coefs_names`) se van a fijar a 0.
+#' Check if the fitted ARIMA/ARIMAX model has been correctly estimated.
 #' 
-#' @returns Lista con los órdenes (`orders`) y vector máscara (`fixed`) actualizados.
-update.orders <- function(orders, coefs_names, fixed=NULL) {
-  
-  if (is.null(fixed)) {return(list(orders=orders, fixed=NULL))}
-  if (all(is.na(fixed))) {return(list(orders=orders, fixed=fixed))}
-  
-  
-  ar <- str_detect(coefs_names, '^ar\\d+')
-  ar_updated <- update.order(orders$regular[1], fixed, ar)
-  orders$regular[1] <- ar_updated$order
-  ar_fixed <- ar_updated$fixed
-  
-  
-  ma <- str_detect(coefs_names, '^ma\\d+')
-  ma_updated <- update.order(orders$regular[3], fixed, ma)
-  orders$regular[3] <- ma_updated$order
-  ma_fixed <- ma_updated$fixed
-  
-  
-  sar <- str_detect(coefs_names, '^sar\\d+')
-  sar_updated <- update.order(orders$seasonal[1], fixed, sar)
-  orders$seasonal[1] <- sar_updated$order
-  sar_fixed <- sar_updated$fixed
-  
-  sma <- str_detect(coefs_names, '^sma\\d+')
-  sma_updated <- update.order(orders$seasonal[3], fixed, sma)
-  orders$seasonal[3] <- sma_updated$order
-  sma_fixed <- sma_updated$fixed
-  
-  
-  if (orders$include_mean) {
-    mask <- sapply(coefs_names, str_detect, c('mean', 'drift', 'intercept'))
-    mask <- apply(mask, 2, sum) == 1
-    const_value <- fixed[mask]
-    if (length(const_value) == 0) {
-        orders$include_mean <- FALSE
-    } else if (!is.na(const_value)) {
-      orders$include_mean <- FALSE
-    }
-  }
-  
-  cnt <- sum(ar, ma, sar, sma)
-  
-  fixed <- if (cnt>=length(fixed)) c(ar_fixed, ma_fixed, sar_fixed, sma_fixed) else 
-    c(ar_fixed, ma_fixed, sar_fixed, sma_fixed, fixed[(1+cnt):length(fixed)])
-  return(list(orders=orders, fixed=fixed))
-}
-
-
-update.order <- function(order, fixed, mask) {
-  if (sum(mask) == 0 || order==0) {
-    return(list(order=order, fixed=c()))
-  } 
-  
-  fixed <- fixed[mask]
-  
-  if (all(is.na(fixed))) {
-    return(list(order=order, fixed=fixed))
-  }
-  
-  for (val in rev(fixed)) {
-    if (!is.na(val) && val==0) {
-      order <- order - 1
-    } else {
-      break
-    }
-  }
-  fixed <- if (order==0) c() else fixed[1:order]
-  return(list(order=order, fixed=fixed))
-}
-
-
-
-#' Comprobación de que un ajuste ha sido correctamente optimizado
-#' 
-#' @param ajuste Ajuste a comprobar.
-#' @returns `TRUE` si el modelo es válido, `FALSE` en otro caso.
-is_valid <- function(ajuste) {
+#' @param fitted_model [Arima]: Fitted ARIMA or ARIMAX model
+#' @returns `TRUE` if the model is valid, `FALSE` otherwise.
+is_valid <- function(fitted_model) {
     
-    if (length(ajuste) == 1 && class(ajuste) == 'try-error') {
+    if (length(fitted_model) == 1 && class(fitted_model) == 'try-error') {
         return(FALSE)
     }
-    else if (all(is.na(ajuste))) {
+    else if (all(is.na(fitted_model))) {
         return(FALSE)
     }
-    else if (suppressWarnings(any(is.na(sqrt(diag(ajuste$var.coef)))))) {
+    else if (suppressWarnings(any(is.na(sqrt(diag(fitted_model$var.coef)))))) {
         return(FALSE)
-    } else if (suppressWarnings(any(is.na(ajuste$var.coef)))) {
+    } else if (suppressWarnings(any(is.na(fitted_model$var.coef)))) {
         return(FALSE)
     }
     return(TRUE)
 }
 
 
-#' Obtención del lag óptimo de Ljung-Box
+#' Obtains the optimal lag for the LjungBox tests
 #'
-#' @param serie 
+#' @param serie [ts]: Time series to check LjungBox test with.
 #'
-#' @return
-#' @export
-#'
-#' @examples
 ljungbox_lag <- function(serie) {
   m <- frequency(serie)
   n <- length(serie)

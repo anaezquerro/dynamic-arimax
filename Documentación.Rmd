@@ -47,10 +47,9 @@ lang: es
 # Cargamos las funciones
 knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
                       fig.height = 8, message=F, comment='', warning=F)
-eval(parse("plot_tools.R", encoding="UTF-8"))
-eval(parse("arima_simulation.R", encoding="UTF-8"))
-eval(parse("auto_fitting.R", encoding="UTF-8"))
-eval(parse("auto_selection.R", encoding="UTF-8"))
+eval(parse("plot-tools.R", encoding="UTF-8"))
+eval(parse("auto-fit.R", encoding="UTF-8"))
+eval(parse("auto-select.R", encoding="UTF-8"))
 eval(parse("forecasting.R", encoding="UTF-8"))
 
 # Librerías de series temporales
@@ -154,7 +153,7 @@ display(result_co2$fig_residuals, "residuals co2", width=1000, height=800)
 
 \newpage
 
-# Función de selección automática de múltiples variables y retardos en modelos ARIMAX (`auto.fit.arima.regression`)
+# Función de selección automática de múltiples variables y retardos en modelos ARIMAX (`drm.select`)
 
 **Descripción**: Método de selección de las variables regresoras y sus respectivos retardos (óptimos) para una serie de tiempo en base al método propuesto por @cryer2008time.
 
@@ -167,7 +166,7 @@ display(result_co2$fig_residuals, "residuals co2", width=1000, height=800)
 - `NA` en caso de que no se haya podido ajustar ningún modelo (incluso uno sin variables regresoras).
 
 ```{r, eval=F}
-auto.fit.arima.regression(serie, xregs, ic = c("aicc", "aic", "bic"), 
+drm.select(serie, xregs, ic = c("aicc", "aic", "bic"), 
                          alpha = 0.05, stationary_method='auto.arima', 
                          show_info = TRUE, ndiff=0)
 ```
@@ -194,7 +193,7 @@ load("data/patatas.dat")
 Y <- patatas[,1]   
 X <- ts(matrix(patatas[,2]))
 colnames(X) <- c('X')
-ajuste_patatas <- auto.fit.arima.regression(Y, X)
+ajuste_patatas <- drm.select(Y, X)
 ```
 
 **Ejemplo de uso**: Serie temporal sobre el *stock* de Microsoft.
@@ -203,7 +202,7 @@ ajuste_patatas <- auto.fit.arima.regression(Y, X)
 microsoft <- read.csv('data/microsoft-stock.csv')
 close_price <- ts(microsoft$Close)   # variable respuesta
 regresoras <- ts(microsoft[, c('Open', 'High', 'Low', 'Volume')])
-ajuste <- auto.fit.arima.regression(close_price, regresoras)
+ajuste <- drm.select(close_price, regresoras)
 ```
 
 
@@ -245,7 +244,7 @@ regresoras <- ts(cbind(confirmed_spain, recovered_spain,
                        deaths_portugal, confirmed_portugal, recovered_portugal),
                  frequency=7)
 
-ajuste <- auto.fit.arima.regression(deaths_spain, regresoras)
+ajuste <- drm.select(deaths_spain, regresoras)
 ```
 
 
@@ -315,7 +314,7 @@ select.optimal.lag(serie, xreg, alpha=0.05, max_lag=NA)
 # Predicciones puntuales a horizonte $h$ e intervalos de predicción (`forecast_model`)
 
 
-Una vez obtenido un ajuste del modelo de regresión dinámica, el objetivo es realizar predicciones a horizonte $h$ con sus correspondientes intervalos de predicción. Partiendo del objeto `Arima` obtenido de la función `auto.fit.arima.regression` (con información acerca de las variables introducidas y sus retardos y las diferenciaciones aplicadas para conseguir errores estacionarios).
+Una vez obtenido un ajuste del modelo de regresión dinámica, el objetivo es realizar predicciones a horizonte $h$ con sus correspondientes intervalos de predicción. Partiendo del objeto `Arima` obtenido de la función `drm.select` (con información acerca de las variables introducidas y sus retardos y las diferenciaciones aplicadas para conseguir errores estacionarios).
 
 Para realizar predicciones a horizonte $h$ a partir de un modelo de regresión es necesario tener predicciones de los valores de las variables regresoras a ese mismo horizonte. Estos valores se pueden obtener, para cada variable, a partir de:
 
@@ -740,14 +739,14 @@ Como el modelo anterior (`ajuste_high`) tiene errores estacionarios se asume com
 ```{r}
 ajuste_high
 ```
-Podemos comprobar que utilizando la función `auto.fit.arima.regression` se automatiza todo este proceso y se tienen los mismos resultados:
+Podemos comprobar que utilizando la función `drm.select` se automatiza todo este proceso y se tienen los mismos resultados:
 
 
 ```{r}
 microsoft <- read.csv('data/microsoft-stock.csv')
 close <- ts(microsoft$Close)
 regresoras <- ts(microsoft[, c('Open', 'High', 'Low', 'Volume')])
-ajuste <- auto.fit.arima.regression(serie=close, xregs=regresoras, ic='aicc',
+ajuste <- drm.select(serie=close, xregs=regresoras, ic='aicc',
                                     stationary_method='adf.test')
 ```
 
@@ -766,7 +765,7 @@ Tiempo secuencial:
 ```{r}
 eval(parse("sequential.R", encoding="UTF-8"))
 elapsed_time <- system.time(
-    ajuste <- auto.fit.arima.regression(close, regresoras, show_info=F)
+    ajuste <- drm.select(close, regresoras, show_info=F)
 )
 print(elapsed_time, row.names=F)
 ```
@@ -777,7 +776,7 @@ Tiempo con paralelización:
 ```{r}
 eval(parse("auto_selection.R", encoding='UTF-8'))
 elapsed_time <- system.time(
-    ajuste <- auto.fit.arima.regression(close, regresoras, show_info=F)
+    ajuste <- drm.select(close, regresoras, show_info=F)
 )
 print(elapsed_time, row.names=F)
 ```
