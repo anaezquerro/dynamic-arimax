@@ -1,4 +1,4 @@
-# Welcome to `dynamic-arimax` repository!
+# Welcome to <span style="color:green">`dynamic-arimax`</span> repository!
 
 This is an [R](https://www.r-project.org/) implementation of a new covariates selection method in Dynamic Regression Models. This proposal was published in: 
 
