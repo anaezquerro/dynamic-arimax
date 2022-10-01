@@ -1,8 +1,0 @@
-"0","load(""data/patatas.dat"")"
-"0","Y <- patatas[,1]   "
-"0","X <- ts(matrix(patatas[,2]))"
-"0","colnames(X) <- c('X')"
-"0","ajuste_patatas <- drm.select(Y, X)"
-"2","Error in checkForRemoteErrors(val) : 
-  one node produced an error: [ArgumentError] `method`  must be ""auto.arima"" or ""adf.test""
-"
