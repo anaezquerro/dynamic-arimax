@@ -1,0 +1,27 @@
+ids <- c('13', '17', '21', '23', '26')
+results_files <- list()
+
+for (id in ids) {
+    load(paste0('results/results-nonstationary', id, '.RData'))
+    results_files[[id]] <- results
+}
+
+results <- list()
+st_methods <- c('auto.arima', 'adf.test')
+ics <- c('aic', 'bic', 'aicc')
+metrics <- c('TP', 'TN', 'FP', 'FN')
+
+for (st_method in st_methods) {
+    results[[st_method]] <- list()
+    for (ic in ics) {
+        results[[st_method]][[ic]] <- list()
+        for (metric in metrics) {
+            results[[st_method]][[ic]][[metric]] <- 0
+            for (id in ids) {
+                results[[st_method]][[ic]][[metric]] <- results[[st_method]][[ic]][[metric]] + 
+                    results_files[[id]][[st_method]][[ic]][[metric]]
+            }
+        }
+    }
+}
+save(results, file='results/results-nonstationary.RData')
