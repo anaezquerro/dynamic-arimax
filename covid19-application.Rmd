@@ -179,8 +179,8 @@ And use the function `auto.fit.arima.regression()` with the following configurat
 
 
 ```{r}
-adjust <- auto.fit.arima.regression(sarscov2, xregs, 
-            ic='aicc', alpha=0.05, stationary_method='auto.arima', show_info=T)
+adjust <- drm.select(sarscov2, xregs, 
+            ic='aicc', alpha=0.05, st_method='auto.arima', show_info=T)
 ```
 
 
@@ -200,8 +200,8 @@ Once we have confirmed the existence of relation between the COVID-19 confirmed 
 ```{r}
 sarscov2 <- ts(cataluna$sarscov2)
 xregs <- ts(cataluna[, c('vac1218', 'vac1845', 'vac4565', 'vac6580', 'vac80')])
-adjust <- auto.fit.arima.regression(sarscov2, xregs, 
-            ic='aicc', alpha=0.05, stationary_method='auto.arima', show_info=T)
+adjust <- drm.select(sarscov2, xregs, 
+            ic='aicc', alpha=0.05, st_method='auto.arima', show_info=T)
 ```
 
 As our natural reasoning might suspect, by separating the vaccionations by group of ages, our selection method states that:

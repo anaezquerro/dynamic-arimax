@@ -47,10 +47,10 @@ lang: es
 # Cargamos las funciones
 knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
                       fig.height = 8, message=F, comment='', warning=F)
-eval(parse("plot_tools.R", encoding="UTF-8"))
-eval(parse("arima_simulation.R", encoding="UTF-8"))
-eval(parse("auto_fitting.R", encoding="UTF-8"))
-eval(parse("auto_selection.R", encoding="UTF-8"))
+eval(parse("plot-tools.R", encoding="UTF-8"))
+eval(parse("arima-simulation.R", encoding="UTF-8"))
+eval(parse("auto-fit.R", encoding="UTF-8"))
+eval(parse("auto-select.R", encoding="UTF-8"))
 eval(parse("forecasting.R", encoding="UTF-8"))
 
 # Librerías de series temporales
@@ -114,8 +114,7 @@ residuals <- residuals$X
 beta0 <- -0.6; beta1 <- 1.7; beta2 <- -2.2; beta3 <- 1.3; r1 <- 2; r3 <- 3
 Y <- beta0 + beta1*lag(X1,-r1) + beta2*X2 + beta3*lag(X3,-r3) + residuals
 xregs <- cbind(X1, X2, X3, X4, X5, X6)
-ajuste <- auto.fit.arima.regression(Y, xregs, ic='aicc', 
-                        stationary_method='adf.test', show_info=F)
+ajuste <- drm.select(Y, xregs, ic='aicc', st_method='adf.test', show_info=F)
 ```
 
 

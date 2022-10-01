@@ -1,4 +1,4 @@
-eval(parse("arima_simulation.R", encoding="UTF-8"))
+eval(parse("arima-simulation.R", encoding="UTF-8"))
 eval(parse("auto-fit.R", encoding="UTF-8"))
 eval(parse("auto-select.R", encoding="UTF-8"))
 
@@ -65,14 +65,14 @@ for (stmethod in stationary_methods) {
         results[[stmethod]][[ic]] <- list(TP=0, TN=0, FP=0, FN=0, lag_right=0)
     }
 }
-                            
+
 generate_covariate <- function(parinfo) {
     stationary <- parinfo$stationary
     set.seed(parinfo$seed)    
     
     model_orders <- generate_orders()
     if (stationary) {
-        model_orders$d <- 0
+        model_orders$d <- sample(1:2, size=1, prob=c(0.7, 0.3))
     }
     xreg <- sim.arima(model_orders, n, F)
     return(xreg)
@@ -118,7 +118,7 @@ simulate <- function(results) {
     clusterEvalQ(cl, library(stringr))
     
     covariates <- c('X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'residuals')
-    covarinfo <- sapply(covariates, function(x) list(seed=sample(0:10000, 1), stationary=F), simplify=F)
+    covarinfo <- sapply(covariates, function(x) list(seed=sample(0:10000, 1), stationary=(x=='residuals')), simplify=F)
     
     xregs <- parLapply(cl, covarinfo, generate_covariate)
     stopCluster(cl)
@@ -180,7 +180,7 @@ simulate <- function(results) {
             
         }
     }
-
+    
     return(results)
     
 }
@@ -199,5 +199,5 @@ for (i in 1:m) {
         
     }
     results <- partial_results
-
+    
 }

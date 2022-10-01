@@ -12,7 +12,7 @@ PAD <- 86
 #' **Automatic covariates selection in dynamic regression models (DRM)**
 #' 
 #' This function implements our new approach of covariates selection in 
-#' regression models where each covariate is introduced lagged $k\geq 0$ moment. 
+#' regression models where each covariate is introduced lagged $k\geq 0$ moments. 
 #' For more information about this method, check the paper attached with this 
 #' file.
 #' 
@@ -30,7 +30,7 @@ PAD <- 86
 #' and the differentiation order is checked. If it is `adf.test`, the 
 #' Dickey-Fuller test is used.
 #' @param show_info [boolean]: Displaying or not displaying the historical 
-#' of added covariates-
+#' of added covariates.
 #' @param ndiff [numeric]: Internal argument (**do not use**) to apply 
 #' regular differentiations to all data when no ARIMAX model can be fitted with 
 #' stationary errors.

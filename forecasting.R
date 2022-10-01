@@ -58,6 +58,7 @@ forecast_model <- function(serie, xregs, fitted_model, h, mode='bootstrap', leve
         
         xreg <- xregs[, c(xreg_name)]           # this has complete data
         xreg_fitted_model <- auto.fit.arima(xreg, show_info = F)
+        xreg_fitted_model$call <- NULL
         xreg_lag <- as.numeric(fitted_model$history$lag[fitted_model$history$var == xreg_name])
         
         # We might have future values from original data
@@ -73,7 +74,7 @@ forecast_model <- function(serie, xregs, fitted_model, h, mode='bootstrap', leve
         }
         
         # Compute the necessary predictions to horizon h
-        xreg_pred <- forecast(xreg_fitted_model, bootstrap=bootst, h=(h + xreg_lag))$mean
+        xreg_pred <- forecast::forecast(xreg_fitted_model, bootstrap=bootst, h=(h + xreg_lag))$mean
         
         if (xreg_lag == 0) {
             xregs_pred[, c(xreg_name)] <- xreg_pred

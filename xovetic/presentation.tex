@@ -6,6 +6,7 @@
 
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{multicol}
 
 
 
@@ -35,6 +36,7 @@
 \usepackage{float}
 \usepackage{booktabs}
 \usepackage{makecell}
+\setbeamertemplate{caption}[numbered]
 
 % -------- Portada ---------
 \title[\textcolor{white}{Automatic covariates selection in DRM}]{Automatic covariates selection in dynamic regression models with application to COVID-19 evolution}
@@ -73,7 +75,7 @@
 
         \begin{itemize}
             \item \cite{cryer2008time} proposed the \textit{prewhitening} as a technique for removing spurious correlation between processes in order to detect linear correlation.
-            \item We propose a forward-selection method that iteratively adds regressor variables (from a set of candidates) $Y_t$ is \textit{significantly} dependent with (assuming $Y_t$ is known and fixed). 
+            \item We propose a forward-selection method that iteratively adds regressor variables (from a set of candidates) $Y_t$ is \textit{significantly} dependent with.
             \item Widespread application in financial, economic, political and biomedical fields.
             \item \textbf{Procedure}: analyze the mutual impact of several variables in order to define mathematical relationships and use them in forecasting.
         \end{itemize}
@@ -82,13 +84,13 @@
 
 \begin{frame}{Prewhitening}
 
-    \cite{cryer2008time} states a linear correlation between two processes $X_t$ and $Y_t$ exists for some $k\leq 0$ if and only if 
+    \cite{cryer2008time} states that if a linear correlation between two processes $X_t$ and $Y_t$ exists for some $k\leq 0$ then
     
     \[ \rho_k(\ddot{X}_t, \ddot{Y}_t) \qquad \text{is statistically significant,} \] 
 
     \begin{itemize}
         \item $\rho_k(X_t^{(1)}, X_t^{(2)})$ is the cross-correlation function between processes $X_t^{(1)}$ and $X_t^{(2)}$ lagged $k$ moments.
-        \item $\ddot{X_t}$ and $\ddot{Y}_t$ are obtained via some linear filter application to $X_t$ and $Y_t$, respectively, ensuring one of them is white noise and the other is a stationary process (\textit{prehitening}).
+        \item $\ddot{X_t}$ and $\ddot{Y}_t$ are obtained via some linear filter application to $X_t$ and $Y_t$, respectively, ensuring one of them is white noise and the other is a stationary process (\textit{prewhitening}).
     \end{itemize}
 
     \begin{block}{Our proposal}
@@ -114,7 +116,7 @@
     Let $Y_t$ be the dependent variable and $\mathcal{X}$ the set of covariates candidates. Thus, selection proceeds as follows:
     
     \begin{enumerate}
-        \item Initialization. Consider $X_t^\text{best}$ as the variable (lagged $r$ moments) that minimizes de IC of the constructed model with $Y_t$:
+        \item Initialization. Consider $X_t^\text{best}$ as the covariate (lagged $r$ moments) that minimizes the IC of the constructed model with $Y_t$:
         \[ X_t^\text{best} = \underset{X_t\in\mathcal{X}}{\arg\min} \Bigg\{ \text{IC}\Bigg( Y_t = \beta_0 + \beta_1 X_{t-r}^\text{best} + \eta_t \Bigg)\Bigg\} \] 
         \item Iteration. Use the regression errors ($\eta_t$) of the last model created to check if some correlation exists between the rest of the covariates not yet added to the model. Find again the ``best'' variable and add it to the model to obtain a new IC value. If this value improves the last one achieved, repeat this step. If it does not, stop the iteration.
         \item Finalization. The errors of the last fitted model must satisfy the stationary property. In other case, consider the regular differentiation of all data and start again the procedure.
@@ -204,17 +206,29 @@
 \begin{frame}{Results of multiple simulations where $\eta_t\sim\text{ARIMA(p,d,q)}$}
     \begin{table}
         \centering\small 
+        \renewcommand{\arraystretch}{1.3}
+        \setlength{\tabcolsep}{10pt}
         \label{simulations2}
-        \caption{Percentage of covariates correctly added to the model}
-        \begin{tabular}{|c|ccc|}
-            \toprule 
-                                    & \textbf{AIC}  & \textbf{BIC}  & \textbf{AICc}   \\
-            \midrule
-            \textbf{adf.test}   &                                                     \\
-            \textbf{auto.arima} &                                                     \\
-            \bottomrule
+        \caption{Percentage data about the performance of the selection method}
+        \begin{tabular}{|c|ccc|ccc|}
+            \cline{2-7}
+            \multicolumn{1}{c|}{}   & \textbf{AIC}  & \textbf{BIC}  & \textbf{AICc}            & \textbf{AIC}      & \textbf{BIC}   & \textbf{AICc} \\
+            \hline       
+            \textbf{adf.test}       & 93.33\%       & 93.33\%        & 93.33\%                 & 4.33\%            & 0.30\%         & 4.33\%        \\
+            \textbf{auto.arima}     & 94.33\%       & 94.66\%        & 95.33\%                 & 5.00\%            & 1.33\%         & 5.00\%        \\
+            \hline
+            \multicolumn{1}{|c|}{}   & \multicolumn{3}{c|}{correctly added (TP)}               & \multicolumn{3}{c|}{incorrectly added (FP)}         \\
+            \hline 
+            \multicolumn{7}{c}{}                                                                                                                    \\
+            \cline{2-7}
+            \multicolumn{1}{c|}{}   & \textbf{AIC}  & \textbf{BIC}  & \textbf{AICc}           & \textbf{AIC}      & \textbf{BIC}   & \textbf{AICc}  \\ 
+            \hline        
+            \textbf{adf.test}       & 95.00\%       & 98.66\%        & 95.00\%                & 6.66\%            & 6.66\%         & 6.66\%         \\
+            \textbf{auto.arima}     & 94.66\%       & 99.66\%        & 95.66\%                & 4.66\%            & 5.33\%         & 4.66\%         \\
+            \hline 
+            \multicolumn{1}{|c|}{}   & \multicolumn{3}{c|}{correctly \textbf{not} added (TN)} & \multicolumn{3}{c|}{incorrectly \textbf{not} added (FN)}  \\
+            \hline
         \end{tabular}
-
     \end{table}
 \end{frame}
 
@@ -244,7 +258,7 @@
     \end{table}    
     \begin{itemize}\small
         \item There is a lagged negative correlation between the vaccination data and COVID-19 evolution.
-        \item The vaccination of the young population (from 18 up to 45 years old) has a greater impact impact in the COVID19 evolution.
+        \item The vaccination of the young population (from 18 up to 45 years old) has a greater impact in the COVID19 evolution.
         \item The vaccination of the population older than 80 years has no significative impact in the COVID19 confirmed cases.
     \end{itemize}
     

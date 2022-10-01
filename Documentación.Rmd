@@ -167,7 +167,7 @@ display(result_co2$fig_residuals, "residuals co2", width=1000, height=800)
 
 ```{r, eval=F}
 drm.select(serie, xregs, ic = c("aicc", "aic", "bic"), 
-                         alpha = 0.05, stationary_method='auto.arima', 
+                         alpha = 0.05, st_method='auto.arima', 
                          show_info = TRUE, ndiff=0)
 ```
 

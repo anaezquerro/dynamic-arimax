@@ -12,8 +12,8 @@ PAD <- 86  # display-info parameter
 
 #' **Automatic fitting of ARIMA or ARIMAX model**
 #' 
-#' Implementaton of the ARIMA or ARIMAX model selection that optimizes an 
-#' information criterion selected and satisifies that:
+#' Implementaton of the ARIMA or ARIMAX model selection that optimizes selected 
+#' information criterion and satisifies that:
 #' 
 #' 1) All coefficients are statistically significative.
 #' 2) Model residuals have zero mean and are independent.
@@ -36,8 +36,10 @@ PAD <- 86  # display-info parameter
 #' of estimated coefficients.
 #' @param show_info [boolean]: Displaying or not displaying the historical of 
 #' fitted models.
+#' @param plot_result [boolean]: Returning or not with the fitted model a 
+#' sequential plot of time series and residuals.
 #' 
-#' @returns Fitted ARIMA/ARIMAX model where all estimated coefficients are 
+#' @returns [Arima] Fitted ARIMA/ARIMAX model where all estimated coefficients are 
 #' significative and residuals are independent and with zero mean. In case it 
 #' is no possible to optimize a model, the function returns `NA`.
 #'
@@ -126,7 +128,7 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
                 cat(paste0(
                     'Independence hypothesis of residuals is rejeceted\n',
                     'Model is not valid. Trying with the next model following ', 
-                    ic, '\n', stri_dup('-', PAD, '\n')
+                    ic, '\n', stri_dup('-', PAD), '\n'
                     )
                 )
             }
@@ -138,7 +140,7 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
                 cat(paste0(
                     'Zero mean hypothesis of residuals is rejected\n',
                     'Model is not valid. Trying with the next model following ',
-                    ic, '\n', stri_dup('-', PAD, '\n')
+                    ic, '\n', stri_dup('-', PAD), '\n'
                 ))
             }
             next
@@ -148,7 +150,8 @@ auto.fit.arima <- function(serie, xregs=NULL, ic='aicc', d=NA, D=NA, alpha=0.05,
             if (show_info) {
                 cat(paste0(
                     'Normality hypothesis is rejected\nModel is valid ',
-                    'but forecasting asuming normality is not available'
+                    'but forecasting asuming normality is not available\n', 
+                    stri_dup('-', PAD), '\n'
                 ))
             }
         }
@@ -233,6 +236,7 @@ fit.model <- function(serie, orders, xregs=NULL, fixed=NULL, show_info=F) {
             silent=T)
         
         if (is_valid(fitted_model)) {
+            fitted_model$fixed <- fixed
             return(fitted_model)
         }
     }
@@ -448,6 +452,8 @@ update.orders <- function(fitted_model, fixed) {
     return(list(orders=new_orders, fixed=new_fixed))
     
 }
+
+
 
 
 
