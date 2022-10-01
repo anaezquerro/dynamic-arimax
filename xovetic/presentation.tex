@@ -56,7 +56,7 @@
     \inst{3} CITIC, Grupo MODES, Departamento de Matemáticas, University of A Coruña \\ \texttt{manuel.oviedo@udc.es}
 }
 
-\date{Congreso XoveTIC 2022}
+\date{XoveTIC 2022 Conference}
 
 \begin{document}
 
@@ -95,9 +95,10 @@
 
     \begin{block}{Our proposal}
         \vspace{0.2em}
-        \begin{itemize}
+        \begin{itemize}\small
             \item Iteratively adds in the model significant covariates with their respective lags that optimize some information criterion (IC) of the resultant residuals.
             \item Uses the \textbf{residuals} of the last model created (by adding covariates) to check the existence of correlation between the dependent variable and a \textbf{new covariate candidate}.
+            \item The R implementation is publicly available in \url{https://github.com/anaezquerro/dynamic-arimax}.
         \end{itemize}
     \end{block}
 
@@ -189,7 +190,7 @@
         \renewcommand{\arraystretch}{1.3}
         \setlength{\tabcolsep}{10pt}
         \label{simulations1}
-        \caption{Percentage of covariates correctly added to the model}
+        \caption{Percentage data results when residuals are stationary}
         \begin{tabular}{|c|ccc|ccc|}
             \cline{2-7}
             \multicolumn{1}{c|}{}   & \textbf{AIC}  & \textbf{BIC}  & \textbf{AICc}            & \textbf{AIC}      & \textbf{BIC}   & \textbf{AICc} \\
@@ -211,8 +212,6 @@
         \end{tabular}
     \end{table}
 
-    
-    
 \end{frame}
 
 \begin{frame}{Results of multiple simulations where $\eta_t\sim\text{ARIMA(p,d,q)}$}
@@ -221,7 +220,7 @@
         \renewcommand{\arraystretch}{1.3}
         \setlength{\tabcolsep}{10pt}
         \label{simulations2}
-        \caption{Percentage data about the performance of the selection method}
+        \caption{Percentage data results when residuals are non-stationary}
         \begin{tabular}{|c|ccc|ccc|}
             \cline{2-7}
             \multicolumn{1}{c|}{}   & \textbf{AIC}  & \textbf{BIC}  & \textbf{AICc}            & \textbf{AIC}      & \textbf{BIC}   & \textbf{AICc} \\
