@@ -5,7 +5,7 @@ This is an [R](https://www.r-project.org/) implementation of a new covariates se
 - [XoveTIC 2022 Conference](https://xovetic.citic.udc.es/).
 - [IX Conference of R-Users in Galicia](https://www.r-users.gal/).
 
-The PDF file of both proceddings are attached in this repository in folder `proceedings/`. We recommend reading at least one of the documents to use this code to deeply understand the mathematics of our method.
+The PDF file of both proceedings are attached in this repository in folder `proceedings/`. We recommend reading at least one of the documents to use this code to deeply understand the mathematics of our method.
 
 For any suggestion or issue with our code, please [contact us](mailto:ana.ezquerro@udc.es) in order to solve it and improve our implementation. 
 
