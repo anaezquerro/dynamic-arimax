@@ -1,0 +1,784 @@
+---
+title: "Documentación sobre autoajuste de modelos ARIMAX"
+author: "Ana Xiangning Pereira Ezquerro"
+date:  "Versión `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    number_sections: yes
+    latex_engine: lualatex
+    fig_caption: yes
+    toc: yes
+    highlight: tango
+    df_print: kable
+    citation_package: biblatex
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    number_sections: true
+    theme: paper
+    highlight: tango
+  prettydoc::html_pretty:
+    toc: true
+    df_print: paged
+    number_sections: true
+    theme: hpstr
+    highlight: github
+fontsize: 12pt
+geometry: margin=0.7in
+classoption: a4paper
+documentclass: article
+header-includes:
+- \usepackage{sfmath}
+- \renewcommand*\familydefault{\sfdefault}
+- \renewcommand{\baselinestretch}{1.2}
+- \setlength{\parskip}{1em}
+- \usepackage{xcolor}
+- \input{confi.tex}
+always_allow_html: yes
+bibliography: references.bib
+biblio-style: bwl-FU
+linkcitations: true
+linkcolor: blue
+lang: es
+---
+
+```{r, echo=F, warning=F, message=F}
+# Cargamos las funciones
+knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
+                      fig.height = 8, message=F, comment='', warning=F)
+eval(parse("plot-tools.R", encoding="UTF-8"))
+eval(parse("auto-fit.R", encoding="UTF-8"))
+eval(parse("auto-select.R", encoding="UTF-8"))
+eval(parse("forecasting.R", encoding="UTF-8"))
+
+# Librerías de series temporales
+library(fpp2)
+library(tseries)
+library(TSA)
+library(seastests)
+library(forecast)
+
+# Librerías para los gráficos
+library(plotly)
+library(forecast)
+
+# Auxiliares
+library(prettydoc)
+library(stringi)
+library(stringr)
+library(polynom)
+library(parallel)
+
+# Función para mostrar y guardar las gráficas de plotly
+display <- function(fig, name, width=800, height=400) {
+  
+  if (is.null(knitr::opts_knit$get("rmarkdown.pandoc.to"))) {
+    return(fig)
+  }
+  if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "latex") {
+    figpath <- paste0('figures/', name, ".pdf")
+    save_image(fig, figpath, width=width, height=height)
+    return(knitr::include_graphics(figpath))
+  }
+  if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "html") {
+    fig <- fig %>% layout(width=840, height=700)
+    return(fig)
+  }
+}
+
+dir.create("figures", showWarnings=F)
+```
+
+
+
+\newpage
+
+# Función de auto-ajuste de modelos ARIMAX (`auto.fit.arima`)
+
+**Descripción**: Obtiene el ajuste de un modelo válido para una serie temporal y, opcionalmente, una o varias variables regresoras. En el ajuste obtenido todos los parámetros son estadísticamente significativos y se verifica que se cumplen las hipótesis de independencia y media nula sobre sus residuos. Este ajuste es escogido por un criterio de información que se introduce como argumento.
+
+**Devuelve**:
+
+a.  Ajuste para la serie temporal (objeto `Arima`) si existe y se puede optimizar.
+b.  `NA` en caso de que no exista o no se pueda optimizar.
+c.  Si `plot_result = TRUE` y se ha conseguido ajustar un modelo válido para la serie, devuelve un objeto de tipo `list` donde se encuentra el ajuste (`$ajuste`), el gráfico de la serie (`$fig_serie`) y el gráfico de los residuos del ajuste (`$fig_residuals`).
+
+```{r, eval=F}
+auto.fit.arima(serie, xregs = NULL, seasonal = TRUE, ic = c("aicc", "aic", "bic"),
+               d = NA, D = NA, alpha = 0.05, show_info = TRUE, plot_result = FALSE)
+```
+
+**Argumentos**:
+
+-   `serie` [`ts`]: Serie temporal sobre la que se quiere obtener un ajuste válido de un modelo ARIMAX.
+-   `xregs` [`mts`]: Se pueden introducir series de tiempo que actuarán como variables regresoras sobre `serie`. Por defecto, `xregs=NULL`, i.e. no hay variables regresoras.
+-   `ic` [`character`]: Criterio de información para escoger modelos.
+    -   `"aicc"`: Criterio de Información de Akaike Corregido (por defecto).
+    -   `"aic"`: Criterio de Información de Akaike.
+    -   `"bic"`: Criterio de Información Bayesiano.
+-   `d` [`numeric`]: Orden de diferenciación regular de `serie` sobre el que se limita la búsqueda de modelos. Si no se introduce ningún valor el valor máximo de la búsqueda es `d=4`.
+-   `D` [`numeric`]: Orden de diferenciación estacional de `serie` sobre el que se limita la búsqueda de modelos. Si no se introduce ningún valor el valor máximo de la úsqueda es `D=3`.
+-   `alpha` [`numeric`]: Valor entre 0 y 1 que indica el nivel de significación de los tests para chequear:
+    -   La significación de los parámetros de los ajustes.
+    -   La validez del modelo a partir del test de independencia de residuos y el test de media nula de los residuos.
+-   `show_info` [`boolean`]: Indica si se muestra la información de la búsqueda del mejor ajuste o no. Por defecto `TRUE`.
+-   `plot_results` [`boolean`]: Indica si se deben devolver los gráficos de la serie temporal y los residuos del modelo obtenido. Por defecto `FALSE`.
+
+**Consideraciones**:
+
+-   Para chequear la independencia de residuos se utiliza el contraste de Ljung-Box (`Box.test`). El número de retardos se escoge en base a la estacionalidad de la serie (si la hay) y la longitud de la misma (función `ljungbox_lag`).
+-   Para chequear la media nula de los residuos se utiliza el `t.test`.
+-   Para chequear la normalidad de los residuos se utilizar el test de Jarque-Bera (`jarque.bera.test`) y el de Shapiro-Wilks (`shapiro.test`).
+-   Los modelos considerados tendrán siempre un orden de diferenciación regular igual o inferior a 3 ($d\leq 3$) y un orden de diferenciación estacional menor o igual a 2 ($D\leq 2$).
+
+**Ejemplo de uso**: Evolución de la gripe en Cataluña.
+
+```{r}
+dat <- read.csv("data/evolucion_gripe_covid.csv")
+gripe <- ts(dat$sdgripal, start=c(2020, 40), frequency=52)
+result_gripe <- auto.fit.arima(gripe, plot_result = TRUE)
+display(result_gripe$fig_serie, "serie gripe", width=1000, height=800)
+display(result_gripe$fig_residuals, "residuals gripe", width=1000, height=800)
+```
+
+**Ejemplo de uso**: [Nivel mensual de dióxido de carbono (Co2) medido en el Observatorio de Mauna Loa (Hawaii)](ftp://ftp.cmdl.noaa.gov/ccg/co2/trends/co2_mm_mlo.txt). La serie comienza en Marzo de 1958.
+
+```{r}
+co2 <- ts(scan('data/co2MaunaLoa.dat'), start=c(1958, 3), frequency=12)
+result_co2 <- auto.fit.arima(co2, ic="aicc", plot_result=TRUE)
+display(result_co2$fig_serie, "serie co2", width=1000, height=800)
+display(result_co2$fig_residuals, "residuals co2", width=1000, height=800)
+```
+
+\newpage
+
+# Función de selección automática de múltiples variables y retardos en modelos ARIMAX (`drm.select`)
+
+**Descripción**: Método de selección de las variables regresoras y sus respectivos retardos (óptimos) para una serie de tiempo en base al método propuesto por @cryer2008time.
+
+**Devuelve**:
+
+- En caso de que se haya podido optimizar un modelo, un objeto de tipo `list` donde se almacena:
+    + Todas las componentes del objeto `Arima` que contienen información acerca del ajuste del modelo seleccionado.
+    + `$ndiff` [`numeric`]: El número de diferenciaciones regulares aplicadas a los datos para obtener un modelo con errores estacionarios. 
+    + `$history` [`data.frame`]: Historial de las variables regresoras seleccionadas con sus respectivos retardos.
+- `NA` en caso de que no se haya podido ajustar ningún modelo (incluso uno sin variables regresoras).
+
+```{r, eval=F}
+drm.select(serie, xregs, ic = c("aicc", "aic", "bic"), 
+                         alpha = 0.05, st_method='auto.arima', 
+                         show_info = TRUE, ndiff=0)
+```
+
+**Argumentos**:
+
+-   `serie` [`ts`]: Serie temporal que funciona como variable respuesta en el modelo de regresión dinámico sobre el que se realiza la selección de variables regresoras.
+-   `xregs` [`mts`]: Dataframe con las series temporales que actuarán como variables regresoras de `serie`. Es importante que los nombres de las columnas tengan un significado de cara a identificar las variables regresoras.
+-   `alpha` [`numeric`]: Valor entre 0 y 1 que indica el nivel de significación de los tests para chequear:
+    -   La significación de los parámetros de los ajustes.
+    -   La validez del modelo a partir del test de independencia de residuos y el test de media nula de residuos.
+    -   La selección de retardos óptimos.
+    -   La comprobación de tendencia de las series.
+-   `stationary_method` [`character`]: Método utilizado para chequear la estacionariedad de una serie temporal en las fases de preblanqueado (técnica usada para eliminar la correlación espuria entre dos series). Si es `"auto.arima"`, se utiliza la función `forecast::auto.arima` para ajustar un modelo ARIMA(p,d,q) y chequear si $d > 0$ (si se cumple esta condición se asume que la serie no es estacionaria). Si es `"adf.test"` se usa el test Dickey-Fuller (`tseries::adf.test`) para chequear la estacionariedad de una serie temporal.
+-   `show_info` [`boolean`]: Indica si se muestra la información de la selección de variables o no.
+-   `ndiff` [`numeric`]: Parámetro interno del programa (no utilizar) para diferenciar todas las variables cuando no se pueda ajustar un modelo válido con errores estacionarios y mantener un registro del número de diferenciaciones que se están realizando. Nótese que cuando, en la salida de la función, el valor de `$ndiff` es mayor a 0, se han aplicado `ndiff` diferencias a los datos (tanto a la variable respuesta como a las regresoras) y por tanto el modelo que se devuelve en `$ajuste` se trata de un modelo de diferencias, no sobre los datos originales.
+
+*Nota*: No se mostrará la información del ajuste de cada modelo para cada variable regresora.
+
+**Ejemplo de uso**: Logaritmo de las ventas semanales y el precio de patatas fritas *Bluebird* de Nueva Zelanda. El período de observación es de 104 semanas (desde el 20 de Septiembre de 1988 hasta el 10 de Septiembre de 2000).
+
+```{r}
+load("data/patatas.dat")
+Y <- patatas[,1]   
+X <- ts(matrix(patatas[,2]))
+colnames(X) <- c('X')
+ajuste_patatas <- drm.select(Y, X)
+```
+
+**Ejemplo de uso**: Serie temporal sobre el *stock* de Microsoft.
+
+```{r}
+microsoft <- read.csv('data/microsoft-stock.csv')
+close_price <- ts(microsoft$Close)   # variable respuesta
+regresoras <- ts(microsoft[, c('Open', 'High', 'Low', 'Volume')])
+ajuste <- drm.select(close_price, regresoras)
+```
+
+
+
+**Ejemplo de uso**: Modelización de la serie de tiempo de muertes en España debido al COVID19, considerando como posibles variables regresoras:
+
+-   Los casos confirmados y curados en España.
+-   Los casos confirmados y muertes en Francia.
+-   Los casos confirmados y muertes en Inglaterra.
+
+```{r}
+confirmed <- read.csv("data/covid-global-confirmed-bycountry.csv")
+deaths <- read.csv("data/covid-global-deaths-bycountry.csv")
+recovered <- read.csv("data/covid-global-recovered-bycountry.csv")
+
+# Spain data
+deaths_spain <- ts(deaths$Spain, frequency=7)
+confirmed_spain <- ts(confirmed$Spain, frequency=7)
+recovered_spain <- ts(recovered$Spain, frequency=7)
+
+# France data
+deaths_france <- ts(deaths$France, frequency=7)
+confirmed_france <- ts(confirmed$France, frequency=7)
+recovered_france <- ts(recovered$France, frequency=7)
+
+# England data
+deaths_england <- ts(deaths$United.Kingdom, frequency=7)
+confirmed_england <- ts(confirmed$United.Kingdom, frequency=7)
+recovered_england <- ts(recovered$United.Kingdom, frequency=7)
+
+# Portugal data
+deaths_portugal <- ts(deaths$Portugal, frequency=7)
+confirmed_portugal <- ts(confirmed$Portugal, frequency=7)
+recovered_portugal <- ts(recovered$Portugal, frequency=7)
+
+regresoras <- ts(cbind(confirmed_spain, recovered_spain, 
+                       deaths_france, confirmed_france, recovered_france,
+                       deaths_england, confirmed_england, recovered_england,
+                       deaths_portugal, confirmed_portugal, recovered_portugal),
+                 frequency=7)
+
+ajuste <- drm.select(deaths_spain, regresoras)
+```
+
+
+
+
+\newpage
+
+# Funciones auxiliares
+
+## Ajuste de los coeficientes de un modelo (`fit.coefficients`)
+
+**Descripción**: Elimina de forma incremental los coeficientes no significativos en un modelo.
+
+**Devuelve**: Ajuste de un modelo donde todos sus coeficientes son significativamente distintos de cero.
+
+```{r, eval=F}
+fit.coefficients(ajuste, alpha=0.05, show_info=T)
+```
+
+**Argumentos**:
+
+-   `ajuste` [`Arima`]: Ajuste de un modelo ARIMA sobre el que se deben eliminar los coeficientes no significativos.
+-   `alpha` [`numeric`]: Valor entre 0 y 1 que especifica el nivel de significación para retirar parámetros del modelo. Por defecto es 5%.
+-   `show_info` [`boolean`]: Indica si se debe mostrar información sobre los parámetros que se van retirando del ajuste o no. Por defecto, va mostrando esta información en consola.
+
+## Ajuste de un ARIMA vía múltiples optimizadores (`fit.model`)
+
+**Descripción**: Ajuste de un modelo ARIMA dados sus órdenes sobre una serie temporal, manejando posibles errores de optimización y probando con otros métodos en caso de que el que viene dado por defecto provoque errores. Los optimizadores con los que prueba son, en este orden: `BFGS`, `Nelder-Mead`, `CG`, `L-BFGS-B`, `SANN` y `Brent`.
+
+**Devuelve**: Modelo ARIMA para los parámetros y serie temporal dada o `NA` en caso de que no haya sido posible ajustar ningún modelo por problemas de optimización.
+
+```{r, eval=F}
+fit.model(serie, orders, xregs=NULL, fixed=NULL)
+```
+
+**Argumentos**:
+
+-   `serie` [`Arima`]: Serie temporal sobre la que se ajusta el modelo ARIMA.
+-   `orders` [`list`]: Objeto de tipo lista donde se especifica información sobre los órdenes regulares y estacionales del modelo. El formato es el siguiente:
+    -   `orders$regular = c(p, d, q)` [`numeric`]: Especifica los órdenes regulares.
+    -   `orders$seasonal = c(P, D, Q)` [`numeric`]: Especifica los órdenes estacionales.
+    -   `orders$include_mean` [`boolean`]: Especifica si se debe incluir la media en un ajuste sin diferencias.
+-   `xregs` [`ts`]: Matriz de posibles variables regresoras.
+-   `fixed` [`vector`]: Vector de valores fijos para los coeficientes del modelo ARIMA que se quiere ajustar.
+
+## Selección del retardo óptimo (`select.optimal.lag`)
+
+**Descripción**: Selección del retardo significativo y óptimo de dos series (asumiendo que una funciona como variable explicativa y otra como variable respuesta en un modelo de regresión con componente temporal). Esta selección se realiza siguiendo el procedimiento descrito por @cryer2008time usando las funciones `tseries::adf.test()` o `auto.arima` para chequear estacionariedad, `seastests::isSeasonal` para chequear presencia de estacionalidad y `TSA::prewhiten()` para aplicar el preblanqueado sobre las dos series.
+
+**Devuelve**: El retardo óptimo de las dos series o `NA` en caso de que ningún retardo sea significativo.
+
+```{r, eval=F}
+select.optimal.lag(serie, xreg, alpha=0.05, max_lag=NA)
+```
+
+**Argumentos**:
+
+-   `serie` [`ts`]: Serie temporal que funciona como variable respuesta.
+-   `xreg` [`ts`]: Variable regresora de `serie`.
+-   `alpha` [`numeric`]: Valor entre 0 y 1 que indica el nivel de significación para aceptar o no la hipótesis nulas en los contrastes de signficación, estacionariedad y estacionalidad.
+-   `max_lag` [`numeric` o `NA`]: Opcionalmente, se puede añadir un valor que limite el valor del retardo óptimo tal que su valor absoluto siempre sea menor que `max_lag`.
+-   `method` [`character`]: Selecciona el método para chequear estacionairedad sobre ambas series. Cuando se fija como `adf.test` se usa el test Dickey-Fuller y cunado se fija como `auto.arima` se ajusta un modelo ARIMA(p,d,q) con la función `forecast::auto.arima()` y se comprueba si $d>0$.
+
+\newpage
+
+
+# Predicciones puntuales a horizonte $h$ e intervalos de predicción (`forecast_model`)
+
+
+Una vez obtenido un ajuste del modelo de regresión dinámica, el objetivo es realizar predicciones a horizonte $h$ con sus correspondientes intervalos de predicción. Partiendo del objeto `Arima` obtenido de la función `drm.select` (con información acerca de las variables introducidas y sus retardos y las diferenciaciones aplicadas para conseguir errores estacionarios).
+
+Para realizar predicciones a horizonte $h$ a partir de un modelo de regresión es necesario tener predicciones de los valores de las variables regresoras a ese mismo horizonte. Estos valores se pueden obtener, para cada variable, a partir de:
+
+- En caso de que el retardo $r$ con el que se ha introducido la variable en el modelo sea igual o mayor a $h$, con los valores "sobrantes" de la serie original.
+- En caso de que $0 \leq r < h$, ajustando un modelo ARIMA sobre la variable regresora y prediciendo $h-r$ valores.
+
+**Descripción**: A partir del ajuste de un ARIMAX realiza predicciones puntuales a horizonte $h$ de cada variable regresora para introducirlas en las predicciones puntuales de la variable respuesta.
+
+**Devuelve**: Objeto `forecast` con las predicciones puntuales y los intervalos de predicción en unidades originales (utilizando el valor de `$ndiff` en el objeto `ajuste`).
+
+```{r, eval=F}
+forecast_model(serie, xregs, ajuste, h, mode='bootstrap', levels=c(80, 90))
+```
+
+**Argumentos**:
+
+-   `serie` [`ts`]: Serie de tiempo que funciona como variable respuesta. Debe ser la serie original que se utilizó para la selección de variables regresoras.
+-   `xregs` [`mts`]: Conjunto original de todas las variables regresoras. 
+-   `ajuste` [`Arima`]: Ajuste del modelo de regresión dinámica obtenido y sobre el que se hacen las predicciones puntuales e intervalos de predicción.
+-   `h` [`numeric`]: Valor horizonte de las predicciones.
+-   `mode` [`character`]: Modo de realizar los intervalos de predicción: basados en normalidad sobre los residuos (`norm`) o a través de *bootstrap* (`bootstrap`). Por defecto se realizan a través de bootstrap.
+    + Si `mode='norm'` se intentarán realizar todas las predicciones (incluso las de las variables regresoras) basadas en normalidad, siempre y cuando se cumpla esa condición (chequeada con los tests de Jarque Bera y Shapiro Wilks).
+-   `levels` [`vector`]: Vector numérico de los niveles a los que se quieren hacer los intervalos de predicción.
+
+**Ejemplo de uso**: 
+
+```{r}
+load("data/patatas.dat")
+Y <- ts(patatas[,1])
+X <- ts(matrix(patatas[,2]))
+colnames(X) <- c('X')
+
+# Calculamos las predicciones puntuales
+preds <- forecast_model(Y, X, ajuste_patatas, h=10, mode='bootstrap')
+display(plot_forecast(preds), name='preds_patatas')
+```
+
+
+
+\newpage
+
+# Comprobación con ejemplos
+
+## Evolución de la gripe en Cataluña
+
+```{r}
+# Carga de datos
+cataluna <- read.csv("data/evolucion_gripe_covid.csv")
+str(cataluna)
+```
+
+El dataset `evolucion_gripe_covid.csv` contiene información sobre la evolución de la gripe y el COVID19 en las distintas áreas sanitarias de Cataluña y en toda la comunidad a lo largo del tiempo. Cada dato recogido representa el número de casos confirmados (de gripe y COVID19) en una semana (desde la 40ª semana de 2020 hasta la 46ª semana de 2021).
+
+Vamos a intentar modelizar la evolución de la gripe con un ARIMA a través de los siguientes métodos:
+
+-   Usando la función `auto.arima` y ajustando los coeficientes para obtener un ajuste válido.
+-   Usando la función `auto.fit.arima` que realiza todo el proceso.
+
+```{r}
+# Los datos ya están ordenados temporalmente 
+gripe <- ts(cataluna$sdgripal, start=c(2020, 40), frequency=52)
+```
+
+Analizamos el gráfico secuencial y la fas y fap muestral:
+
+```{r}
+display(result_gripe$fig_serie, "serie gripe", width=1000, height=800)
+```
+
+A continuación, usamos la función `auto.arima`:
+
+```{r}
+ajuste <- auto.arima(gripe, stepwise=FALSE, approximation=FALSE, trace=TRUE)
+```
+
+Y comprobamos que el mejor modelo (siguiendo el AICc) es un ARIMA(1, 1, 0) sin media.
+
+```{r}
+ajuste
+```
+
+A continuación, comprobamos qué parámetros *no* son significativos:
+
+```{r}
+alpha <- 0.05; stat <- qnorm(1-0.05/2)
+abs(ajuste$coef) < stat*sqrt(diag(ajuste$var.coef))
+```
+
+En este caso, **todos** los parámetros son significativos y por tanto se trata de un ajuste válido. Finalmente, realizamos el análisis de residuos para chequear las hipótesis de independencia y media nula.
+
+```{r}
+checkresiduals(ajuste)
+t.test(ajuste$residuals, mu=0)
+```
+
+El test de independencia de Ljung-Box y el test de media nula nos dicen que los residuos sí son independientes y tienen media cero, por tanto se puede considerar que el ajuste es válido para modelizar la evolución de la gripe.
+
+El objetivo de la función `auto.fit.arima` es realizar todo este proceso de forma automática. El resultado que nos devuelva debe ser el mismo que el que hemos obtenido haciendo los cálculos paso a paso:
+
+```{r}
+ajuste <- auto.fit.arima(gripe)
+```
+
+Adicionalmente, la función `auto.fit.arima` nos avisa de que los residuos no siguen una distribución normal, por tanto tendremos que tener cuidado al hacer predicciones sobre la serie.
+
+
+
+
+## Selección de covariables para predecir el precio de cierre en el *stock* de Microsoft
+
+Cargamos la base de datos y separamos la variable respuesta (`response`) del conjunto de variables regresoras (`Open`, `High`, `Low`, `Volume`).
+
+```{r}
+microsoft <- read.csv('data/microsoft-stock.csv')
+str(microsoft)
+close <- ts(microsoft$Close)
+open <- ts(microsoft$Open)
+high <- ts(microsoft$High)
+low <- ts(microsoft$Low)
+volume <- ts(microsoft$Volume)
+```
+
+**Inicialización**: Selección de un retardo máximo permitido para las variables regresoras que se van añadiendo al modelo.
+
+
+Asumiendo que se dispone de un conjunto de series temporales (del cual una de ellas funciona como variable respuesta y el resto como candidatas a variables regresoras) de tamaño $T$, en cada iteración del algoritmo de añade una nueva variable regresora con retardo $r$ y se compara su criterio de información con un modelo de regresión más sencillo que no tiene esa variable (el modelo anterior del algoritmo). Para que estas comparaciones iterativas se realicen con el mismo número de datos, es necesario recortar todas las series por el ḿáximo retardo permitido (este valor se denomina como `max_lag` en el código). 
+
+
+La función `get.maximum.lag()` aproxima este valor como el máximo (en valor absoluto) de los retardos significativos de todas las variables candidatas a regresoras, sin la restricción de que este sea menor o igual a 0. Formalmente:
+
+$$ \mathcal{R} = \max_{i=1\cdots m} \Big\{ | \underset{k\in\mathbb{Z}}{\arg\max} \big\{|\rho_k(X_i, Y)| \big\} \Big\}$$
+
+donde $\rho_k(X,Y)$ es la correlación entre dos procesos preblanqueados $X$ e $Y$ en el retardo $k$.
+
+Para obtener estos retardos para cada variable se debe aplicar el **proceso de preblanqueado** entre cada par $(X_i,Y)$ para eliminar la correlación espuria y obtener los retardos donde se produce una correlación significativa. Realizamos este proceso para la variable regresora `Open`:
+
+```{r}
+open_diff <- open; close_diff <- close
+
+# Chequear estacionariedad con el adf.test y diferenciar hasta eliminar la 
+# estacionariedad en ambas
+adf.test(open_diff); adf.test(close_diff)
+open_diff <- diff(open_diff); close_diff <- diff(close_diff)
+
+# Aplicando una única diferenciación ya se obtienen dos variables sin 
+# estacionariedad
+adf.test(open_diff); adf.test(close_diff)
+
+# Realizamos el preblanqueado 
+series_prewhiten <- TSA::prewhiten(open_diff, close_diff, plot=F)
+
+corr_plot <- plot_prewhiten(series_prewhiten)
+display(corr_plot, "fig-open0", width=1000, height=800)
+cat(paste0('Correlación máxima con la variable Open en el retardo: ', 
+           series_prewhiten$ccf$lag[which.max(abs(series_prewhiten$ccf$acf))]))
+```
+
+Como podemos apreciar en el gráfico, la mayor correlación significativa (en valor absoluto) se encuentra en $\mathrm{lag}=1$. A la hora de añadir variables al modelo, este retardo no sería válido para introducir esta variable regresora (pues es mayor a 0). No obstante, para fijar un valor para $\mathcal{R}$ sí se tiene en cuenta.
+
+Si repetimos este proceso para las otras 3 variables:
+
+```{r}
+# Preblanqueado con la variable high
+high_diff <- high; close_diff <- close
+adf.test(high_diff); adf.test(close_diff)
+high_diff <- diff(high_diff); close_diff <- diff(close_diff)
+adf.test(high_diff); adf.test(close_diff)
+
+series_prewhiten <- TSA::prewhiten(high_diff, close_diff, plot=F)
+corr_plot <- plot_prewhiten(series_prewhiten)
+display(corr_plot, "fig-high0", width=1000, height=800)
+cat(paste0('Correlación máxima con la variable High en el retardo: ', 
+           series_prewhiten$ccf$lag[which.max(abs(series_prewhiten$ccf$acf))], '\n'))
+
+# Preblanqueado con la variable low
+low_diff <- low; close_diff <- close
+adf.test(low_diff); adf.test(close_diff)
+low_diff <- diff(low_diff); close_diff <- diff(close_diff)
+adf.test(low_diff); adf.test(close_diff)
+
+series_prewhiten <- TSA::prewhiten(low_diff, close_diff, plot=F)
+corr_plot <- plot_prewhiten(series_prewhiten)
+display(corr_plot, "fig-low0", width=1000, height=800)
+cat(paste0('Correlación máxima con la variable Low en el retardo: ', 
+           series_prewhiten$ccf$lag[which.max(abs(series_prewhiten$ccf$acf))], '\n'))
+
+# Preblanqueado con la variable volume
+volume_diff <- volume; close_diff <- close
+adf.test(volume_diff); adf.test(close_diff)
+volume_diff <- diff(volume_diff); close_diff <- diff(close_diff)
+adf.test(volume_diff); adf.test(close_diff)
+
+series_prewhiten <- TSA::prewhiten(volume_diff, close_diff, plot=F)
+corr_plot <- plot_prewhiten(series_prewhiten)
+display(corr_plot, "fig-volume0", width=1000, height=800)
+cat(paste0('Correlación máxima con la variable Volume en el retardo: ', 
+           series_prewhiten$ccf$lag[which.max(abs(series_prewhiten$ccf$acf))], '\n'))
+```
+
+En el resto de variables, la máxima correlación (en términos absolutos) se produce en $k=0$, por lo que $\mathcal{R}=1$. Tendremos por tanto que recortar las series un total de $\mathcal{R}$ valores para tener el mismo número de datos con los que comparar los modelos.
+
+*Nota*: Las series se recortan a la hora de ajustar el modelo con la función `auto.fit.arima()`, pero se utilizan todos los datos para escoger el retardo en el que se produce la máxima correlación (función `select.optimal.lag()`).
+
+**Fase 1**: En la fase de inicialización ya tenemos los retardos óptimos calculados (todos iguales a 0). A continuación, procedemos a ajustar un modelo ARIMA (sin la restricción de estacionariedad sobre sus residuos) para cada variable candidata a regresora. Podemos ajustar este modelo a mano (utilizando la función `stats::auto.arima` y retirando los coeficientes no significativos), pero para este caso utilizaremos la función ya descrita anteriormente, `auto.fit.arima`, que realiza todo este proceso de forma automática.
+
+*Nota*: En este caso utilizaremos como criterio de información el AICc.
+
+```{r}
+max_lag <- 1
+
+# función para recortar max_lag valores de las series temporales
+cut <- function(x) {return(window(x, start=(start(x)[1]+max_lag)))}
+
+close_cut <- cut(close)
+open_cut <- cut(open)
+high_cut <- cut(high)
+low_cut <- cut(low)
+volume_cut <- cut(volume)
+
+
+# Ajuste de un modelo con la variable open
+ajuste_open <- auto.fit.arima(close_cut, xregs=cbind(open=open_cut), show_info=F)
+ajuste_open
+
+# Ajuste de un modelo con la variable high
+ajuste_high <- auto.fit.arima(close_cut, xregs=cbind(high=high_cut), show_info=F)
+ajuste_high
+
+# Ajuste de un modelo con la variable low
+ajuste_low <- auto.fit.arima(close_cut, xregs=cbind(low=low_cut), show_info=F)
+ajuste_low
+
+# Ajuste de un modelo con la variable volume
+ajuste_volume <- auto.fit.arima(close_cut, xregs=cbind(volume=volume_cut), show_info=F)
+ajuste_volume
+```
+
+Los resultados obtenidos en esta primera iteración son los siguientes:
+
+- El mejor modelo para la variable `Open` es un ARIMA(0,0,0) con AICc=5924.58 y retardo nulo.
+- No se puede encontrar un modelo para la variable `High` con retardo nulo.
+- No se puede encontrar un modelo para la variable `Low` con retardo nulo.
+- No se puede encontrar un modelo para la variable `Volume` con retardo nulo.
+
+Como el "mejor" criterio de información se obtiene al añadir la variable `Open` al modelo, se toma dicho ajuste y se calculan los residuos. Estos residuos pasarán a ser la variable respuesta y se repetirá el proceso en busca de nuevas variables a añadir al modelo.
+
+```{r}
+response <- residuals(ajuste_open, type='regression')
+```
+
+**Fase 2**: Búsqueda de variables a añadir al modelo tomando como variable respuesta los residuos del modelo anterior.
+
+Aplicamos de nuevo el preblanqueado a las variables que no se han introducido en el modelo (i.e. todas excepto `Open`):
+
+```{r}
+alpha <- 0.05      # nivel de significación
+trend <- function(x) {
+    return(suppressWarnings(adf.test(na.remove(x))$p.value) >= alpha)
+}
+
+# Preblanqueado para la variable high
+high_diff <- high; response_diff <- response
+while (any(apply(cbind(high_diff, response_diff), 2, trend))) {
+    high_diff <- diff(high_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(high_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable high en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+
+
+# Preblanqueado con la variable low
+low_diff <- low; response_diff <- response
+while (any(apply(cbind(low_diff, response_diff), 2, trend))) {
+    low_diff <- diff(low_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(low_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable low en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+
+# Preblanqueado con la variable volume
+volume_diff <- volume; response_diff <- response
+while (any(apply(cbind(volume_diff, response_diff), 2, trend))) {
+    volume_diff <- diff(volume_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(volume_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable volume en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+```
+
+En esta segunda iteración vemos que los retardos óptimos se producen en valores $k\neq 0$. Teniendo esto en cuenta debemos "alterar" las series correspondientes a las variables regresoras para construir el modelo ARIMAX.
+
+```{r}
+high_lagged <- lag(high, -1)
+low_lagged <- lag(low, -1)
+head(high_lagged)
+head(low_lagged)
+```
+Como podemos comprobar ahora las variables que han sido retardadas tienen su inicio en el tiempo $t=3$ (uno más que sin retardar). Para construir un ARIMAX con la variable respuesta no se pueden introducir de esta forma en la función `auto.arima`, pues esta no tiene en cuenta el inicio de cada serie temporal. La forma correcta de introducirlas es construyendo una matriz para que coincidan los tiempos del par de series temporales:
+
+```{r}
+data_high <- cbind(close_cut, open=open_cut, 
+                   high=window(high_lagged, start=start(close_cut)))
+head(data_high)
+
+data_low <- cbind(close_cut, open=open_cut, 
+                  low=window(low_lagged, start=start(close_cut)))
+head(data_low)
+
+data_volume <- cbind(close_cut, open=open_cut, volume=volume_cut)
+head(data_volume)
+```
+
+Una vez retardadas las variables procedemos a ampliar el modelo inicial:
+
+```{r}
+ajuste_high <- auto.fit.arima(data_high[, c(1)],    # variable respuesta
+                              data_high[, -c(1)],   # variables regresoras
+                              show_info=F)
+ajuste_high
+
+ajuste_low <- auto.fit.arima(data_low[, c(1)], xregs=data_low[, -c(1)], 
+                             show_info=F)
+ajuste_low
+
+ajuste_volume <- auto.fit.arima(data_volume[, c(1)], xregs=data_volume[, -c(1)], 
+                                show_info=F)
+ajuste_volume
+```
+Los resultados de la segunda iteración son los siguientes:
+
+
+- El mejor modelo para la variable `High` y `Open` es un ARIMA(0,0,0) con AICc=5921.57 y retardo $k=-1$ (se ha mejorado el modelo anterior).
+- El mejor modelo para la variable `Low` y `Open` es un ARIMA(0,0,0) con AICc=5924.34 y retardo $k=-1$ (se ha mejorado el modelo anterior).
+- No se puede encontrar un modelo para la variable `Volume` y `Open` con retardo nulo.
+
+A partir de esto se toma el modelo con las variables regresoras `High` y `Open` y se calculan sus residuos.
+
+```{r}
+response <- residuals(ajuste_high, type='regression')
+head(response)
+```
+
+Estos residuos serán utilizados para la siguiente iteración para escoger nuevos retardos con los que añadir más variables regresoras.
+
+*Nota*: Los residuos tienen valores nulos. Para aplicar el `adf.test` será necesario eliminarlos.
+
+
+**Fase 3**: Búsqueda de variables a añadir al modelo tomando como variable respuesta los residuos del modelo anterior.
+
+Volvemos a aplicar preblanqueado con los residuos del modelo anterior y las covariables que aún no han sido añadidas al modelo:
+
+
+```{r}
+
+# Preblanqueado con la variable low
+low_diff <- low; response_diff <- response
+while (any(apply(cbind(low_diff, response_diff), 2, trend))) {
+    low_diff <- diff(low_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(low_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable low en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+
+# Preblanqueado con la variable volume
+volume_diff <- volume; response_diff <- response
+while (any(apply(cbind(volume_diff, response_diff), 2, trend))) {
+    volume_diff <- diff(volume_diff)
+    response_diff <- diff(response_diff)
+}
+series_prewhiten <- TSA::prewhiten(volume_diff, response_diff, plot=F)
+lags <- series_prewhiten$ccf$lag[series_prewhiten$ccf$lag <= 0]
+corrs <- abs(series_prewhiten$ccf$acf[series_prewhiten$ccf$lag <= 0])
+cat(paste0('Correlación máxima con la variable volume en el retardo: ', 
+           lags[which.max(corrs)], '\n'))
+```
+Volvemos a construir las matrices con las series temporales que actuarán como regresoras en el nuevo modelo:
+
+
+```{r}
+data_low <- cbind(close_cut, open=open_cut, 
+                  high=window(high_lagged, start=start(close_cut)), 
+                  low=window(low_lagged, start=start(close_cut)))
+head(data_low)
+
+data_volume <- cbind(close_cut, open=open_cut, 
+                     high=window(high_lagged, start=start(close_cut)), 
+                     volume_cut)
+head(data_volume)
+```
+
+Y ajustamos los dos modelos:
+
+
+```{r}
+ajuste_low <- auto.fit.arima(data_low[, c(1)], xregs=data_low[, -c(1)], show_info=F)
+ajuste_low
+
+ajuste_volume <- auto.fit.arima(data_volume[, c(1)], xregs=data_volume[, -c(1)], 
+                                show_info=F)
+ajuste_volume
+```
+
+- El mejor modelo para la variable `Low`, `High`, `Open` es un ARIMA(0,0,0) con AICc=5923.56 y retardo $k=-1$ (no se ha mejorado el modelo anterior).
+- No se puede encontrar un modelo para la variable `Volume`, `High`, `Open`  con retardo nulo.
+
+Como al añadir el modelo `Low` no se ha mejorado el criterio de información escogido (el AICc) no se añade la variable `Low` al modelo y se detiene el algoritmo de adición de variables regresoras.
+
+Como el modelo anterior (`ajuste_high`) tiene errores estacionarios se asume como modelo final. Si tuviera errores estacionarios (modelizables por un ARIMA con $d>0$) entonces se tendría que intentar ajustar un modelo ARIMAX con errores estacionarios y, en caso de no ser posible
+
+```{r}
+ajuste_high
+```
+Podemos comprobar que utilizando la función `drm.select` se automatiza todo este proceso y se tienen los mismos resultados:
+
+
+```{r}
+microsoft <- read.csv('data/microsoft-stock.csv')
+close <- ts(microsoft$Close)
+regresoras <- ts(microsoft[, c('Open', 'High', 'Low', 'Volume')])
+ajuste <- drm.select(serie=close, xregs=regresoras, ic='aicc',
+                                    stationary_method='adf.test')
+```
+
+# Comparativa en tiempos de ejecución con código secuencial y paralelización
+
+
+```{r}
+microsoft <- read.csv('data/microsoft-stock.csv')
+close <- ts(microsoft$Close)
+regresoras <- ts(microsoft[, c('Open', 'High', 'Low', 'Volume')])
+```
+
+
+Tiempo secuencial:
+
+```{r}
+eval(parse("sequential.R", encoding="UTF-8"))
+elapsed_time <- system.time(
+    ajuste <- drm.select(close, regresoras, show_info=F)
+)
+print(elapsed_time, row.names=F)
+```
+
+
+Tiempo con paralelización:
+
+```{r}
+eval(parse("auto_selection.R", encoding='UTF-8'))
+elapsed_time <- system.time(
+    ajuste <- drm.select(close, regresoras, show_info=F)
+)
+print(elapsed_time, row.names=F)
+```
+
+

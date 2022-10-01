@@ -729,4 +729,4 @@ chips_model <- drm.select(sales, xregs, show_info=F)
 preds <- forecast_model(sales, xregs, chips_model, h=10, mode='bootstrap')
 display(plot_forecast(preds), name='preds_chips')
 ```
-[!preds chips](figures/preds_chips.png)
+![preds chips](figures/preds_chips.png)

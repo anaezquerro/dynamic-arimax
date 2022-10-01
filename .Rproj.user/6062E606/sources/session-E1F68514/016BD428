@@ -1,0 +1,26 @@
+{
+    "id": "016BD428",
+    "path": "~/dynamic-arimax/simulations-stationary.R",
+    "project_path": "simulations-stationary.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1664607996606.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "27,0",
+        "scrollLine": "13"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1664608006,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1664608006259,
+    "read_only": false,
+    "read_only_alternatives": []
+}

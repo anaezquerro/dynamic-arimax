@@ -5,7 +5,7 @@ This is an [R](https://www.r-project.org/) implementation of a new covariates se
 - [XoveTIC 2022 Conference](https://xovetic.citic.udc.es/).
 - [IX Journal of R-Users in Galicia](https://www.r-users.gal/).
 
-The PDF file of both proceddings are attached in this repository in folder `proceedings/`, with a longer and more detailed version in order to deeply understand the mathematics of our method. We recommend reading at least one of the documents to use this code.
+The PDF file of both proceddings are attached in this repository in folder `proceedings/`. We recommend reading at least one of the documents to use this code to deeply understand the mathematics of our method.
 
 For any suggestion or issue with our code, please [contact us](mailto:ana.ezquerro@udc.es) in order to solve it and improve our implementation. 
 
@@ -55,6 +55,8 @@ $$ Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \beta_2 X_{t-r_2}^{(2)} + \beta_3 X
 We tested our selection method with different configurations:
 - With different stationary tests (via `auto.arima()` function or Dickey-Fuller test).
 - With different information criterions (AIC, BIC or AICc).
+
+For more detailed information about the simulation procedure, please read the proceeding of the repository.
 
 ### Results when $\eta_t \sim \text{ARMA}(p,d,q)$ is non-stationary
 
