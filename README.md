@@ -3,7 +3,7 @@
 This is an [R](https://www.r-project.org/) implementation of a new covariates selection method in Dynamic Regression Models. This proposal was published in: 
 
 - [XoveTIC 2022 Conference](https://xovetic.citic.udc.es/).
-- [IX Journal of R-Users in Galicia](https://www.r-users.gal/).
+- [IX Conference of R-Users in Galicia](https://www.r-users.gal/).
 
 The PDF file of both proceddings are attached in this repository in folder `proceedings/`. We recommend reading at least one of the documents to use this code to deeply understand the mathematics of our method.
 
