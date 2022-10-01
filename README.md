@@ -1,11 +1,11 @@
-# Welcome to `dynamic-arimax` repository!
+# Welcome to <span style="color:green">`dynamic-arimax`</span> repository!
 
 This is an [R](https://www.r-project.org/) implementation of a new covariates selection method in Dynamic Regression Models. This proposal was published in: 
 
 - [XoveTIC 2022 Conference](https://xovetic.citic.udc.es/).
 - [IX Conference of R-Users in Galicia](https://www.r-users.gal/).
 
-The PDF file of both proceddings are attached in this repository in folder `proceedings/`. We recommend reading at least one of the documents to use this code to deeply understand the mathematics of our method.
+The PDF file of both proceedings are attached in this repository in folder `proceedings/`. We recommend reading at least one of the documents to use this code to deeply understand the mathematics of our method.
 
 For any suggestion or issue with our code, please [contact us](mailto:ana.ezquerro@udc.es) in order to solve it and improve our implementation. 
 
@@ -25,7 +25,7 @@ In order to use this implementation and run all files, the following prerequisit
 - R packages: [`fpp2`](https://cran.r-project.org/web/packages/fpp2/index.html), [`tseries`](https://cran.r-project.org/web/packages/tseries/index.html), [`TSA`](https://cran.r-project.org/web/packages/TSA/index.html), [`seastests`](https://cran.r-project.org/web/packages/seastests/index.html), [`forecast`](https://cran.r-project.org/web/packages/forecast/index.html), [`plotly`](https://plotly.com/r/), [`prettydoc`](https://prettydoc.statr.me/), [`stringi`](https://cran.r-project.org/web/packages/stringi/index.html), [`stringr`](https://cran.r-project.org/web/packages/stringr/index.html), [`polynom`](https://cran.r-project.org/web/packages/polynom/index.html), [`parallel`](https://stat.ethz.ch/R-manual/R-devel/library/parallel/doc/parallel.pdf).
 - [rtools](https://cran.r-project.org/bin/windows/Rtools/).
 
-Once [R](https://www.r-project.org/),  [RStudio IDE](https://www.rstudio.com/products/rstudio/download/) and [rtools](https://cran.r-project.org/bin/windows/Rtools/) have been installed, you can run `installation.R` to automatically install all R-packages needed.
+Once [R](https://www.r-project.org/),  [RStudio IDE](https://www.rstudio.com/products/rstudio/download/) and [rtools](https://cran.r-project.org/bin/windows/Rtools/) have been installed, you acn run `installation.R` to automatically install all R-packages needed.
 
 ## Structure of the module
 
@@ -34,7 +34,7 @@ Once [R](https://www.r-project.org/),  [RStudio IDE](https://www.rstudio.com/pro
 - `forecasting.R`: Implementation of dynamic regression models forecasting once a model has been fitted with the selection function.
 - `plot-tools.R`: Script for fancy Plotly graphics.
 - `figures/`: Folder where Plotly figures are saved.
-- `data/`: Datasets needed to run  examples in [`EXAMPLES.md`](EXAMPLES.md).
+- `data/: Datasets needed to run  examples in [`EXAMPLES.md`](EXAMPLES.md).
 
 
 ## Documentation and examples 
@@ -61,36 +61,37 @@ We tested our selection method with different configurations:
 
 For more detailed information about the simulation procedure, please read the proceeding of the repository.
 
-### Results when $\eta_t \sin \text{ARMA}(p,q)$ is stationary
+### Results when $\eta_t \sim \text{ARMA}(p,q)$ is stationary
 
 - Percentage of correctly added covariates to the model (*true positive*):
 
 |                |      AIC      |  BIC          |   AICc        |
 |:--------------:|:-------------:|:-------------:|:-------------:|
-| **adf.test**   | 93.33%        | 93.33%        | 93.33%        |
-| **auto.arima** | 94.33%        | 94.66%        | 95.33%        |
+| **adf.test**   | 97.66%        | 97.66%        | 97.66%        |
+| **auto.arima** | 98.33%        | 98.33%        | 98.33%        |
 
 - Percentage of incorrectly added covariates to the model (*false positive*):
 
 |                |      AIC      |  BIC          |   AICc        |
 |:--------------:|:-------------:|:-------------:|:-------------:|
-| **adf.test**   | 4.33%         | 0.30%         | 4.33%         |
-| **auto.arima** | 5.00%         | 1.33%         | 5.00%         |
+| **adf.test**   | 3.66%         | 1.33%         | 3.66%         |
+| **auto.arima** | 3.66%         | 1.33%         | 3.66%         |
 
 - Percentage of correctly **not** added covariates to the model (*true negative*):
 
 |                |      AIC      |  BIC          |   AICc        |
 |:--------------:|:-------------:|:-------------:|:-------------:|
-| **adf.test**   | 95.00%        | 98.66%        | 95.00%        |
-| **auto.arima** | 94.66%        | 99.66%        | 95.66%        |
+| **adf.test**   | 96.33%        | 98.66%        | 96.33%        |
+| **auto.arima** | 96.33%        | 98.66%        | 96.33%        |
 
 - Percentage of incorrectly **not** added covariates to the model (*false negative*):
 
 
 |                |      AIC      |  BIC          |   AICc        |
 |:--------------:|:-------------:|:-------------:|:-------------:|
-| **adf.test**   | 6.66%         | 6.66%         | 6.66%         |
-| **auto.arima** | 4.66%         | 5.33%         | 4.66%         |
+| **adf.test**   | 2.33%         | 2.33%         | 2.33%         |
+| **auto.arima** | 1.66%         | 1.66%         | 1.66%         |
+
 
 ### Results when $\eta_t \sim \text{ARIMA}(p,d,q)$ is non-stationary
 
