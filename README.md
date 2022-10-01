@@ -34,7 +34,7 @@ Once [R](https://www.r-project.org/),  [RStudio IDE](https://www.rstudio.com/pro
 - `forecasting.R`: Implementation of dynamic regression models forecasting once a model has been fitted with the selection function.
 - `plot-tools.R`: Script for fancy Plotly graphics.
 - `figures/`: Folder where Plotly figures are saved.
-- `data/: Datasets needed to run  examples in [`EXAMPLES.md`](EXAMPLES.md).
+- `data/`: Datasets needed to run  examples in [`EXAMPLES.md`](EXAMPLES.md).
 
 
 ## Documentation and examples 
@@ -61,7 +61,38 @@ We tested our selection method with different configurations:
 
 For more detailed information about the simulation procedure, please read the proceeding of the repository.
 
-### Results when $\eta_t \sim \text{ARMA}(p,d,q)$ is non-stationary
+### Results when $\eta_t \sin \text{ARMA}(p,q)$ is stationary
+
+- Percentage of correctly added covariates to the model (*true positive*):
+
+|                |      AIC      |  BIC          |   AICc        |
+|:--------------:|:-------------:|:-------------:|:-------------:|
+| **adf.test**   | 93.33%        | 93.33%        | 93.33%        |
+| **auto.arima** | 94.33%        | 94.66%        | 95.33%        |
+
+- Percentage of incorrectly added covariates to the model (*false positive*):
+
+|                |      AIC      |  BIC          |   AICc        |
+|:--------------:|:-------------:|:-------------:|:-------------:|
+| **adf.test**   | 4.33%         | 0.30%         | 4.33%         |
+| **auto.arima** | 5.00%         | 1.33%         | 5.00%         |
+
+- Percentage of correctly **not** added covariates to the model (*true negative*):
+
+|                |      AIC      |  BIC          |   AICc        |
+|:--------------:|:-------------:|:-------------:|:-------------:|
+| **adf.test**   | 95.00%        | 98.66%        | 95.00%        |
+| **auto.arima** | 94.66%        | 99.66%        | 95.66%        |
+
+- Percentage of incorrectly **not** added covariates to the model (*false negative*):
+
+
+|                |      AIC      |  BIC          |   AICc        |
+|:--------------:|:-------------:|:-------------:|:-------------:|
+| **adf.test**   | 6.66%         | 6.66%         | 6.66%         |
+| **auto.arima** | 4.66%         | 5.33%         | 4.66%         |
+
+### Results when $\eta_t \sim \text{ARIMA}(p,d,q)$ is non-stationary
 
 - Percentage of correctly added covariates to the model (*true positive*):
 

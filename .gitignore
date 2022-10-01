@@ -15,20 +15,6 @@ vignettes/*.pdf
 .Renviron
 .Rproj.user/
 
-# folders
-iras/
-jornadaR/
-results/
-simulations/
-xovetic/
-Documentación_files/
-.DS_Store
-figures/*.pdf
-documentation/
-new-functions.R
-parser_data.R
-plot_figures.R
-sequential.R
 
 # latex
 *.aux
@@ -54,3 +40,21 @@ sequential.R
 *.bbl
 *.blg
 *.hd
+
+
+
+
+# gitignore for main 
+iras/
+jornadaR/
+results/
+simulations/
+xovetic/
+Documentación_files/
+.DS_Store
+figures/*.pdf
+documentation/
+new-functions.R
+parser_data.R
+plot_figures.R
+sequential.R
