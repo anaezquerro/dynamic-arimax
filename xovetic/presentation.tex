@@ -188,15 +188,25 @@
         \centering\small 
         \label{simulations1}
         \caption{Percentage of covariates correctly added to the model}
-        \begin{tabular}{|c|ccc|}
-            \toprule 
-                                    & \textbf{AIC}  & \textbf{BIC}  & \textbf{AICc}   \\
-            \midrule
-            \textbf{adf.test}   &                                                     \\
-            \textbf{auto.arima} &                                                     \\
-            \bottomrule
+        \begin{tabular}{|c|ccc|ccc|}
+            \cline{2-7}
+            \multicolumn{1}{c|}{}   & \textbf{AIC}  & \textbf{BIC}  & \textbf{AICc}            & \textbf{AIC}      & \textbf{BIC}   & \textbf{AICc} \\
+            \hline       
+            \textbf{adf.test}       & 97.66\%       & 97.66\%        & 97.66\%                 & 3.66\%            & 1.33\%         & 3.66\%        \\
+            \textbf{auto.arima}     & 98.33\%       & 98.33\%        & 98.33\%                 & 3.66\%            & 1.33\%         & 3.66\%        \\
+            \hline
+            \multicolumn{1}{|c|}{}   & \multicolumn{3}{c|}{correctly added (TP)}               & \multicolumn{3}{c|}{incorrectly added (FP)}         \\
+            \hline 
+            \multicolumn{7}{c}{}                                                                                                                    \\
+            \cline{2-7}
+            \multicolumn{1}{c|}{}   & \textbf{AIC}  & \textbf{BIC}  & \textbf{AICc}           & \textbf{AIC}      & \textbf{BIC}   & \textbf{AICc}  \\ 
+            \hline        
+            \textbf{adf.test}       & 96.33\%       & 98.66\%        & 96.33\%                & 2.33\%            & 2.33\%         & 2.33\%         \\
+            \textbf{auto.arima}     & 96.33\%       & 98.66\%        & 96.33\%                & 1.66\%            & 1.66\%         & 1.66\%         \\
+            \hline 
+            \multicolumn{1}{|c|}{}   & \multicolumn{3}{c|}{correctly \textbf{not} added (TN)} & \multicolumn{3}{c|}{incorrectly \textbf{not} added (FN)}  \\
+            \hline
         \end{tabular}
-
     \end{table}
 
     

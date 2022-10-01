@@ -61,7 +61,39 @@ We tested our selection method with different configurations:
 
 For more detailed information about the simulation procedure, please read the proceeding of the repository.
 
-### Results when $\eta_t \sim \text{ARMA}(p,d,q)$ is non-stationary
+### Results when $\eta_t \sim \text{ARMA}(p,q)$ is stationary
+
+- Percentage of correctly added covariates to the model (*true positive*):
+
+|                |      AIC      |  BIC          |   AICc        |
+|:--------------:|:-------------:|:-------------:|:-------------:|
+| **adf.test**   | 97.66%        | 97.66%        | 97.66%        |
+| **auto.arima** | 98.33%        | 98.33%        | 98.33%        |
+
+- Percentage of incorrectly added covariates to the model (*false positive*):
+
+|                |      AIC      |  BIC          |   AICc        |
+|:--------------:|:-------------:|:-------------:|:-------------:|
+| **adf.test**   | 3.66%         | 1.33%         | 3.66%         |
+| **auto.arima** | 3.66%         | 1.33%         | 3.66%         |
+
+- Percentage of correctly **not** added covariates to the model (*true negative*):
+
+|                |      AIC      |  BIC          |   AICc        |
+|:--------------:|:-------------:|:-------------:|:-------------:|
+| **adf.test**   | 96.33%        | 98.66%        | 96.33%        |
+| **auto.arima** | 96.33%        | 98.66%        | 96.33%        |
+
+- Percentage of incorrectly **not** added covariates to the model (*false negative*):
+
+
+|                |      AIC      |  BIC          |   AICc        |
+|:--------------:|:-------------:|:-------------:|:-------------:|
+| **adf.test**   | 2.33%         | 2.33%         | 2.33%         |
+| **auto.arima** | 1.66%         | 1.66%         | 1.66%         |
+
+
+### Results when $\eta_t \sim \text{ARIMA}(p,d,q)$ is non-stationary
 
 - Percentage of correctly added covariates to the model (*true positive*):
 
