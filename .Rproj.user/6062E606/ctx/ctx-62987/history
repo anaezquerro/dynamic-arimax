@@ -1,0 +1,512 @@
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+ajuste
+xregs
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+lag_right
+lag3
+list(generate_lags())
+as.list(generate_lags())
+as.list(generate_lags())
+as.list(setNames(enerate_lags(), c('X1', 'X2', 'X3')))
+as.list(setNames(generate_lags(), c('X1', 'X2', 'X3')))
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+betas
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+betas
+lags
+lag(X1, 1)
+lag(X1, -1)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+ics_results <- as.list(setNames(list(TP=0, TN=0, FP=0, FN=0, lag_right=0), ics))
+ics <- c('aic', 'bic', 'aicc')
+stationary_methods <- c('auto.arima', 'adf.test')
+ics_results <- as.list(setNames(list(TP=0, TN=0, FP=0, FN=0, lag_right=0), ics))
+ics_results
+ics_results <- as.list(setNames(
+rep(list(TP=0, TN=0, FP=0, FN=0, lag_right=0), length(ics)),
+ics))
+ics_results
+list(TP=0, TN=0, FP=0, FN=0, lag_right=0)
+lapply(ics, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0))
+lapply(ics, on(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0))
+ics_results <- as.list(setNames(
+lapply(ics, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0)),
+ics))
+ics_results
+lapply(1:3, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0))
+help(lapply)
+sapply(ics, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0)
+)
+sapply(ics, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0), simplify=F)
+ics_results <-sapply(ics, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0)), simplify=F)
+ics_results <- sapply(ics, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0), simplify=F)
+ics_results
+stmethods_results <- sapply(stationary_methods, list(TP=0, TN=0, FP=0, FN=0, lag_right=0))
+stmethods_results <- sapply(stationary_methods, list(TP=0, TN=0, FP=0, FN=0, lag_right=0)))
+stmethods_results <- sapply(stationary_methods, list(TP=0, TN=0, FP=0, FN=0, lag_right=0))
+stmethods_results <- sapply(stationary_methods, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0), simplify=F)
+covarinfo <- sapply(covariates, function(x) list(seed=sample(0:10000, 1), stationary=(x=='residuals')), simplify=F)
+covarinfo
+lags <- sapply(c('X1', 'X2', 'X3'), function(x) generate_lags(), simplify=F)
+lags
+lags <- as.list(setNames(generate_lags(), c('X1', 'X2', 'X3')))
+beta0 <- betas[1]; beta1 <- betas[2]; beta2 <- betas[3]; beta3 <- betas[4]
+lag1 <- lags[['X1']]; lag2 <- lags[['X2']]; lag3 <- lags[['X3']]
+# construct the dependent variable
+Y <- beta0 + beta1 * lag(X1, -lag1) + beta2 * lag(X2, -lag2) + beta3 * lag(X3, -lag3) + residuals
+xregs <- cbind(X1, X2, X3, X4, X5, X6)
+for (ic in ics)
+ajuste <- auto.fit.arima.regression(Y, xregs, ic=ic, show_info=F)
+udpate_result <- function(metric, value=1) {
+ic_results[[ic]][[metric]] <- ic_results[[ic]][[metric]] + value
+stmethods_results[[stmet]][[metric]] <- stmethods_results[[stmet]][[metric]] + value
+}
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+xregs
+ajuste
+Tp
+TP
+TN
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+xregs
+ajuste
+update_results('TP', 1)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+xregs
+ajuste
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+udpate_result('TP', 1)
+udpate_result('lag_right', check_lag(covar, lags[covar]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result('FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+for (covar in c('X4', 'X5', 'X6')) {
+if (!check_covariate(covar)) {
+udpate_result('TN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+} else {
+udpate_result('FP', 1)
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+}
+}
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+ics_results
+ics_results[['aic']]
+ics_results[['aic']][['TP']]
+ics_results[['aic']][['TP']] <- 1
+ics_results[['aic']][['TP']]
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+microsoft <- read.csv('data/microsoft-stock.csv')
+close_price <- ts(microsoft$Close)   # variable respuesta
+regresoras <- ts(microsoft[, c('Open', 'High', 'Low', 'Volume')])
+ajuste <- auto.fit.arima.regression(close_price, regresoras)
+ics_results
+ic
+update_result(ic, statmet, 'TN', 1)
+udpate_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+}
+update_result(ic, statmet, 'TN', 1)
+update_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+}
+update_result(ic, statmet, 'TN', 1)
+cis_results
+ics_results
+update_result(ic, statmet, 'TN', 1)
+ic
+statmet
+stmethods_results
+update_result(ic, statmet, 'TN', 1)
+stmethods_results
+update_result(ic, statmet, 'TN', 2)
+stmethods_results
+stmethods_results[[statmet]]
+stmethods_results[[statmet]][[metric]]
+stmethods_results[[statmet]][['TN']]
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+eval(parse("plot_tools.R", encoding="UTF-8"))
+eval(parse("arima_simulation.R", encoding="UTF-8"))
+eval(parse("auto_fitting.R", encoding="UTF-8"))
+eval(parse("auto_selection.R", encoding="UTF-8"))
+eval(parse("forecasting.R", encoding="UTF-8"))
+# Librerías de series temporales
+library(fpp2)
+library(tseries)
+library(TSA)
+library(seastests)
+library(forecast)
+# Librerías para los gráficos
+library(plotly)
+library(forecast)
+# Auxiliares
+library(prettydoc)
+library(stringi)
+library(stringr)
+library(polynom)
+library(parallel)
+ics <- c('aicc')
+n <- 5000
+stationary_methods <- c('auto.arima', 'adf.test')
+generate_orders <- function() {
+p <- sample(0:3, size=1, prob=c(0.3, 0.3, 0.2, 0.1))
+q <- sample(0:3, size=1, prob=c(0.3, 0.3, 0.2, 0.1))
+d <- sample(0:2, size=1, prob=c(0.5, 0.4, 0.1))
+return(list(p=p, q=q, d=d))
+}
+generate_coefficients <- function() {
+sign <- ifelse(runif(4)>0.3, 1, -1)
+betas <- sign*rnorm(4, 2, 0.5)
+betas[1] <- rnorm(1, 0, 0.1)*ifelse(runif(1)>0.4, 1, -1)
+return(betas)
+}
+generate_lags <- function() {
+lags <- sample(0:6, size=3, prob=c(0.3, 0.25, 0.25, 0.1, 0.05, 0.025, 0.025))
+return(lags)
+}
+check_covariate <- function(covariate) {
+if (ncol(ajuste$xreg) == 1) {
+return(covariate %in% ajuste$history$var)
+} else {
+return(
+(covariate %in% ajuste$history$var) &
+(covariate %in% names(ajuste$coef[ajuste$coef != 0]))
+)
+}
+}
+check_lag <- function(covariate, correct_lag) {
+return(correct_lag == (ajuste$history$lag[ajuste$history$var == covariate]))
+}
+update_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+}
+TP <- 0
+TN <- 0
+FP <- 0
+FN <- 0
+lag_right <- 0
+ics <- c('aic', 'bic', 'aicc')
+stationary_methods <- c('auto.arima', 'adf.test')
+ics_results <- sapply(ics, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0), simplify=F)
+stmethods_results <- sapply(stationary_methods, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0), simplify=F)
+generate_covariate <- function(parinfo) {
+stationary <- parinfo$stationary
+set.seed(parinfo$seed)
+model_orders <- generate_orders()
+if (stationary) {
+model_orders$d <- 0
+}
+xreg <- sim.arima(model_orders, n, F)
+return(xreg$X)
+}
+#' Primer caso. Utilizando errores estacionarios
+# generate covariates and residuals
+local_variables <- ls()
+global_variables <- names(.GlobalEnv)
+cl <- makeCluster(detectCores(logical=F))
+clusterExport(cl, local_variables, env=environment())
+clusterExport(cl, global_variables)
+clusterEvalQ(cl, library(polynom))
+clusterEvalQ(cl, library(fpp2))
+clusterEvalQ(cl, library(tseries))
+clusterEvalQ(cl, library(TSA))
+clusterEvalQ(cl, library(seastests))
+clusterEvalQ(cl, library(forecast))
+clusterEvalQ(cl, library(stringr))
+covariates <- c('X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'residuals')
+covarinfo <- sapply(covariates, function(x) list(seed=sample(0:10000, 1), stationary=(x=='residuals')), simplify=F)
+xregs <- parLapply(cl, covarinfo, generate_covariate)
+stopCluster(cl)
+X1 <- xregs[['X1']]; X2 <- xregs[['X2']]; X3 <- xregs[['X3']]
+X4 <- xregs[['X4']]; X5 <- xregs[['X5']]; X6 <- xregs[['X6']]
+residuals <- xregs[['residuals']]
+# generate coefficients and lags
+betas <- generate_coefficients()
+lags <- as.list(setNames(generate_lags(), c('X1', 'X2', 'X3')))
+beta0 <- betas[1]; beta1 <- betas[2]; beta2 <- betas[3]; beta3 <- betas[4]
+lag1 <- lags[['X1']]; lag2 <- lags[['X2']]; lag3 <- lags[['X3']]
+# construct the dependent variable
+Y <- beta0 + beta1 * lag(X1, -lag1) + beta2 * lag(X2, -lag2) + beta3 * lag(X3, -lag3) + residuals
+xregs <- cbind(X1, X2, X3, X4, X5, X6)
+for (ic in ics) {
+for (statmet in stationary_methods) {
+ajuste <- auto.fit.arima.regression(Y, xregs, ic=ic, stationary_method=statmet, show_info=F)
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+udpate_result(ic, statmet, 'TP', 1)
+udpate_result(ic, statmet, 'lag_right', check_lag(covar, lags[covar]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result('FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+for (covar in c('X4', 'X5', 'X6')) {
+if (!check_covariate(covar)) {
+udpate_result(ic, statmet, 'TN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+} else {
+udpate_result(ic, statmet, 'FP', 1)
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+}
+}
+}
+}
+ics_results
+update_result(ic, statmet, 'TP',1)
+ics_results
+ajuste <- auto.fit.arima.regression(Y, xregs, ic=ic, stationary_method=statmet, show_info=F)
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+udpate_result(ic, statmet, 'TP', 1)
+udpate_result(ic, statmet, 'lag_right', check_lag(covar, lags[covar]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+ics_results
+ics_results <- sapply(ics, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0), simplify=F)
+stmethods_results <- sapply(stationary_methods, function(x) list(TP=0, TN=0, FP=0, FN=0, lag_right=0), simplify=F)
+update_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+}
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+udpate_result(ic, statmet, 'TP', 1)
+udpate_result(ic, statmet, 'lag_right', check_lag(covar, lags[covar]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+ics_results
+update_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+print(ics_results)
+}
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+udpate_result(ic, statmet, 'TP', 1)
+udpate_result(ic, statmet, 'lag_right', check_lag(covar, lags[covar]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+update_result(ic, statmet, 'TP', 1)
+update_result(ic, statmet, 'lag_right', check_lag(covar, lags[covar]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+ics_results
+update_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+print(ics_results[[ic]][[metric]])
+}
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+update_result(ic, statmet, 'TP', 1)
+update_result(ic, statmet, 'lag_right', check_lag(covar, lags[covar]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+ics_results[[ic]][[metric]]
+ics_results[[ic]][['FP']]
+ics_results[[ic]][['TP']] + 1
+check_lag(covar, lags[covar])
+ajuste$history$lag[ajuste$history$var == covar]
+correct_lag == ajuste$history$lag[ajuste$history$var == covar]
+parseInt(ajuste$history$lag[ajuste$history$var == covar])
+as.numeric(ajuste$history$lag[ajuste$history$var == covar])
+check_lag <- function(covariate, correct_lag) {
+return(correct_lag == as.numeric(ajuste$history$lag[ajuste$history$var == covariate]))
+}
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+update_result(ic, statmet, 'TP', 1)
+update_result(ic, statmet, 'lag_right', check_lag(covar, lags[covar]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+check_lag(covar, lags[covar])
+covar
+lags[covar]
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+update_result(ic, statmet, 'TP', 1)
+update_result(ic, statmet, 'lag_right', check_lag(covar, -lags[covar]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+as.numeric(ajuste$history$lag[ajuste$history$var == covariate])
+as.numeric(ajuste$history$lag[ajuste$history$var == covar])
+-lags[covar]
+-lags[[covar]]
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+update_result(ic, statmet, 'TP', 1)
+update_result(ic, statmet, 'lag_right', check_lag(covar, lags[[covar]]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+ics_results
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+ics_results
+update_result('aicc', 'adf.test', 'TP', 1)
+ics_results
+ics_results[[ic]][[metric]] + value
+ics_results[[ic]][['TP']] + 1
+update_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+}
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+update_result(ic, statmet, 'TP', 1)
+update_result(ic, statmet, 'lag_right', check_lag(covar, lags[[covar]]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+ics_results
+# launch the selection method
+update_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+print(ics_results)
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+}
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+update_result(ic, statmet, 'TP', 1)
+update_result(ic, statmet, 'lag_right', check_lag(covar, lags[[covar]]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+# launch the selection method
+update_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+print(ics_results[[ic]][[metric]])
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+}
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+update_result(ic, statmet, 'TP', 1)
+update_result(ic, statmet, 'lag_right', check_lag(covar, lags[[covar]]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+# launch the selection method
+update_result <- function(ic, statmet, metric, value=1) {
+ics_results[[ic]][[metric]] <- ics_results[[ic]][[metric]] + value
+print(ics_results[[ic]][[metric]])
+print(ics_results)
+stmethods_results[[statmet]][[metric]] <- stmethods_results[[statmet]][[metric]] + value
+}
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+update_result(ic, statmet, 'TP', 1)
+update_result(ic, statmet, 'lag_right', check_lag(covar, lags[[covar]]))
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+update_result(ic, statmet, 'FN', 1)
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+check_lag(covar, lags[[covar]])
+as.numeric(check_lag(covar, lags[[covar]]))
+as.numeric(T)
+}
+}
+check_lag <- function(covariate, correct_lag) {
+return(as.numeric(
+correct_lag == as.numeric(ajuste$history$lag[ajuste$history$var == covariate])
+)
+)
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+# update TP values
+ics_results[[ic]][['TP']] <- ics_results[[ic]][['TP']] + 1
+stmethods_results[[statmet]][['TP']] <- stmethods_results[[statmet]][['TP']] + 1
+# update lag right values
+ics_results[[ic]][['lag_right']] <- ics_results[[ic]][['lag_right']] + check_lag(covar, lags[[covar]])
+stmethods_results[[statmet]][['lag_right']] <- stmethods_results[[statmet]][['lag_right']] + check_lag(covar, lags[[covar]])
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+ics_results[[ic]][['FN']] <- ics_results[[ic]][['FN']] + 1
+stmethods_results[[statmet]][['FN']] <- stmethods_results[[statmet]][['FN']] + 1
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+ics:results
+)
+for (covar in c('X1', 'X2', 'X3')) {
+if (check_covariate(covar)) {
+# update TP values
+ics_results[[ic]][['TP']] <- ics_results[[ic]][['TP']] + 1
+stmethods_results[[statmet]][['TP']] <- stmethods_results[[statmet]][['TP']] + 1
+# update lag right values
+ics_results[[ic]][['lag_right']] <- ics_results[[ic]][['lag_right']] + check_lag(covar, lags[[covar]])
+stmethods_results[[statmet]][['lag_right']] <- stmethods_results[[statmet]][['lag_right']] + check_lag(covar, lags[[covar]])
+cat(paste0('Covariate ', covar, ' was added to the model\n'))
+} else {
+ics_results[[ic]][['FN']] <- ics_results[[ic]][['FN']] + 1
+stmethods_results[[statmet]][['FN']] <- stmethods_results[[statmet]][['FN']] + 1
+cat(paste0('Covariate ', covar, ' was not added to the model\n'))
+}
+}
+ics_results
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+ics_results
+is_valid(NULL)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
+source("~/dynamic-arimax/simulations.R", echo=TRUE)
