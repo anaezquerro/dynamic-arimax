@@ -1,2 +1,0 @@
-"0","sarscov2 <- ts(cataluna$sarscov2)"
-"0","xregs <- ts(cataluna[, c('sdgripal', 'vactotal')])"
