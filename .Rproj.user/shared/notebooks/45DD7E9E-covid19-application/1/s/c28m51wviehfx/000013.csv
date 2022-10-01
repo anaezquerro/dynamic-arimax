@@ -1,2 +1,0 @@
-"0","adjust <- drm.select(sarscov2, xregs, "
-"0","            ic='aicc', alpha=0.05, st_method='auto.arima', show_info=T)"
