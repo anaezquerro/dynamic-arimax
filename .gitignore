@@ -19,6 +19,7 @@ vignettes/*.pdf
 iras/
 jornadaR/
 results/
+simulations/
 xovetic/
 Documentación_files/
 .DS_Store
