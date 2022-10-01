@@ -21,6 +21,7 @@ simulations/
 xovetic/
 Documentación_files/
 .DS_Store
+figures/*.pdf
 
 # latex
 *.aux
