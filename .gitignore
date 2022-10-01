@@ -18,20 +18,7 @@ Documentación_files/
 .DS_Store
 *.zip
 
-# folders of main
-# iras/
-# jornadaR/
-# results/
-# simulations/
-# xovetic/
-# figures/*.pdf
-# documentation/
-# new-functions.R
-# parser_data.R
-# plot_figures.R
-# sequential.R
-
-# folders of develop
+# folders
 figures/
 
 # latex
