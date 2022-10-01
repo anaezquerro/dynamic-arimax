@@ -14,21 +14,25 @@ vignettes/*.pdf
 /cache/
 .Renviron
 .Rproj.user/
-
-# folders
-iras/
-jornadaR/
-results/
-simulations/
-xovetic/
 Documentación_files/
 .DS_Store
-figures/*.pdf
-documentation/
-new-functions.R
-parser_data.R
-plot_figures.R
-sequential.R
+*.zip
+
+# folders of main
+# iras/
+# jornadaR/
+# results/
+# simulations/
+# xovetic/
+# figures/*.pdf
+# documentation/
+# new-functions.R
+# parser_data.R
+# plot_figures.R
+# sequential.R
+
+# folders of develop
+figures/
 
 # latex
 *.aux
@@ -54,3 +58,5 @@ sequential.R
 *.bbl
 *.blg
 *.hd
+*.nav
+*.snm
