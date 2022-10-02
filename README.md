@@ -34,7 +34,7 @@ Once [R](https://www.r-project.org/),  [RStudio IDE](https://www.rstudio.com/pro
 - `forecasting.R`: Implementation of dynamic regression models forecasting once a model has been fitted with the selection function.
 - `plot-tools.R`: Script for fancy Plotly graphics.
 - `figures/`: Folder where Plotly figures are saved.
-- `data/: Datasets needed to run  examples in [`EXAMPLES.md`](EXAMPLES.md).
+- `data/`: Datasets needed to run  examples in [`EXAMPLES.md`](EXAMPLES.md).
 
 
 ## Documentation and examples 
