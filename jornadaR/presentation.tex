@@ -58,7 +58,8 @@
 
 \date{IX Conference of R Users in Galicia}
 \titlegraphic{\vspace{0.3em}
-\hspace{12em}
+\includegraphics[scale=0.25]{gallery/modes.png}
+\hspace{1em}
 \includegraphics[scale=0.25]{gallery/usc.png}
 \hspace{1em}
 \includegraphics[scale=0.2]{gallery/logo.pdf}
@@ -71,9 +72,14 @@
 
 \frame{\titlepage}
 
-\begin{frame}
-    \frametitle{Introduction}
-        The \textbf{linear dynamic regression model} defines the linear dependence between a stochastic process $Y_t$ and a set of processes $\mathcal{X} =  \{ X_t^{(1)}, ..., X_t^{(m)} \}$:
+\begin{frame}{Table of Contents}
+    \tableofcontents
+\end{frame}
+
+
+\section{Introduction}
+\begin{frame}{Introduction}
+        The \textbf{linear dynamic regression model (DRM)} defines the linear dependence between a stochastic process $Y_t$ and a set of processes $\mathcal{X} =  \{ X_t^{(1)}, ..., X_t^{(m)} \}$:
 
         \[  Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \cdots \beta_m X_{t-r_m}^{(m)} + \eta_t
         \]
@@ -97,25 +103,29 @@
     
 \end{frame}
 
+\section{Methodology}
 \begin{frame}{Methodology}
     
 
     Let $Y_t$ be the dependent variable and $\mathcal{X}$ the set of covariates candidates. Thus, selection proceeds as follows:
     
     \begin{enumerate}
-        \item Initialization. Consider $X_t^\text{best}$ as the covariate (lagged $r$ moments) that minimizes the IC of the constructed model with $Y_t$:
+        \item Initialization. Consider $X_t^\text{best}$ as the covariate (lagged $r$ moments) obtained via \textit{prewhitening} that minimizes the IC of the constructed model with $Y_t$:
         \[ X_t^\text{best} = \underset{X_t\in\mathcal{X}}{\arg\min} \Bigg\{ \text{IC}\Bigg( Y_t = \beta_0 + \beta_1 X_{t-r}^\text{best} + \eta_t \Bigg)\Bigg\} \] 
         \item Iteration. Use the regression errors ($\eta_t$) of the last model created to check if some correlation exists between the rest of the covariates not yet added to the model. Find again the ``best'' variable and add it to the model to obtain a new IC value. If this value improves the last one achieved, repeat this step. If it does not, stop the iteration.
         \item Finalization. The errors of the last fitted model must satisfy the stationary property. In other case, consider the regular differentiation of all data and start again the procedure.
     \end{enumerate}
 \end{frame}
 
+\section{Simulation and results}
 \begin{frame}{Simulation procedure}
     \begin{enumerate}
-        \item Seven time series (modelable by an ARIMA) were generated: six act as covariate candidates $\mathcal{X}=\{X_t^{(1)}, ..., X_t^{(6)}\}$ with random lags $r\in[0, 6]$, and the remaining as the errors of the model.
-        \item Formally, each simulation follows this scheme:
+        \item Artificially construct $Y_t$:
         \[ Y_t = \beta_0 + \beta_1 X_{t-r_1}^{(1)} + \beta_2 X_{t-r_2}^{(2)} + \beta X_{t-r_3}^{(3)} + \eta_t \] 
-        where $\eta_t\sim\text{ARMA}(p,q)$, $\beta_0,...,\beta_3$ are randomly generated and $r_i\in[0,6] $ for $i=1,..,3$.
+        where $\eta_t\sim\text{ARMA}(p,q)$, $\beta_0,...,\beta_3$, $r_i\in[0,6]$ and $X_t^{(1)}$, $X_t^{(2)}$ and $X_t^{(3)}$ are randomly generated.
+        \item Consider the set of candidates:
+        \[ \mathcal{X} = \{ X_t^{(1)}, X_t^{(2)}, X_t^{(3)}, \underbrace{X_t^{(4)}, X_t^{(5)}, X_t^{(6)}}
+        _{\text{not in the model}}\}  \]
         \item Selection method was tested with different configurations:
         \begin{itemize}
             \item Changing the IC with three different options: AIC, BIC or AICc.
@@ -187,32 +197,17 @@
 \end{frame}
 
 
-\begin{frame}{Publicly implementation of the method}
-    \begin{itemize}
-        \item This method was implemented in R and optimized in order to parallelize some independent tasks of the method. 
-        \item All code is openly available in:
-        \begin{center}
-            \url{https://github.com/anaezquerro/dynamic-arimax}
-        \end{center}
-        \item The main user-friendly functions of our implementation are:
-        \begin{itemize}
-            \item \function{auto.fit.arima()}: Fits the optimal valid ARIMA/ARIMAX model (via some information criterion) where all coefficients are significative and the resultant residuals of the model satisfy the properties of independence and zero-mean.
-            \item \function{drm.select()}: Implements our selection method and optionally provides some information about the partial fits that are generated in process.
-            \item  \function{forecast\_model()}: Given the fit ARIMAX model of \function{drm.select()} function, returns and displays point predictions in original units.
-        \end{itemize}
-        Detailed examples of these functions can be consulted in \href{https://github.com/anaezquerro/dynamic-arimax/blob/main/EXAMPLES.md}{\texttt{EXAMPLES.md}} file of the repository.
-    \end{itemize}
-\end{frame}
 
 
 \begin{frame}{Example of one simulation result}
     \begin{figure}
-        \caption{Code output when launching the function \texttt{auto.fit.arima.regression()} that implements our approach}
+        \caption{Code output when launching the function \texttt{drm.select()} that implements our approach}
         \includegraphics[scale=0.5]{gallery/simulation-example.pdf}
     \end{figure}
     
 \end{frame}
 
+\section{Application on real cases}
 
 \begin{frame}{Example of the iterative selection step by step}
 
@@ -281,16 +276,29 @@
     
 \end{frame}
 
-\begin{frame}{Study on vaccination data aggregated by group of ages}
+
+\section{R implementation}
 
 
-    \begin{figure}\small
-        \caption{Forecasting applied to the dynamic regression model constructed in \ref*{covid19model}}
-        \includegraphics[scale=0.4]{gallery/covid19-forecasting.pdf}
-    \end{figure}
+\begin{frame}{Publicly implementation of the method}
+    \begin{itemize}
+        \item This method was implemented in R and optimized in order to parallelize some independent tasks of the method. 
+        \item All code is openly available in:
+        \begin{center}
+            \url{https://github.com/anaezquerro/dynamic-arimax}
+        \end{center}
+        \item The main user-friendly functions of our implementation are:
+        \begin{itemize}
+            \item \function{auto.fit.arima()}: Fits the optimal valid ARIMA/ARIMAX model (via some information criterion) where all coefficients are significative and the resultant residuals of the model satisfy the properties of independence and zero-mean.
+            \item \function{drm.select()}: Implements our selection method and optionally provides some information about the partial fits that are generated in process.
+            \item  \function{forecast\_model()}: Given the fit ARIMAX model of \function{drm.select()} function, returns and displays point predictions in original units.
+        \end{itemize}
+        Detailed examples of these functions can be consulted in \href{https://github.com/anaezquerro/dynamic-arimax/blob/main/EXAMPLES.md}{\texttt{EXAMPLES.md}} file of the repository.
+    \end{itemize}
 \end{frame}
 
 
+\section{Conclusions}
 \begin{frame}{Conclusions and future work}
     \begin{itemize}
         \item Our method successfully covers a widespread application in financial, economic and biomedical fields.
