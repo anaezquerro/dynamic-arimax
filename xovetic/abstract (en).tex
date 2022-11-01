@@ -1,0 +1,194 @@
+\documentclass[12pt, a4paper, twoside]{article}
+
+% ---------------- Configuración estilo -----------------------
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{sansmathfonts}
+\renewcommand*\familydefault{\sfdefault}
+
+% -------------- Configuración de hiperenlaces -----------------
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks = true,
+    linkcolor = blue,
+    urlcolor = blue,
+    citecolor = blue
+}
+
+% ----------------- Configuración de la página --------------------
+\usepackage{geometry}
+\geometry{
+    top         	= 1.2in,
+    left			= 1in,
+    right			= 1in,
+    bottom			= 1.2in,
+    headsep			= 20pt,
+    footnotesep		= 20pt
+}
+
+
+% ------------ Configuración de los párrafos y enumeraciones ---------
+\setlength{\parskip}{0.7em}
+\setlength{\parindent}{0em}
+\usepackage[shortlabels]{enumitem}
+\setlist[enumerate]{leftmargin=0.7cm, topsep=4pt, parsep=2pt}
+\setlist[itemize]{leftmargin=0.7cm, topsep=4pt, parsep=2pt}
+
+
+% ------------------ Paquetes matemáticos -----------------------
+\usepackage{xfrac}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{bm}
+\setlength{\abovedisplayskip}{1pt} 
+\setlength{\belowdisplayskip}{1pt}
+
+\usepackage[capitalise, noabbrev, nameinlink]{cleveref}
+
+
+% ----------------- Paquetes de diseño -------------------------
+\usepackage{tabto}
+\usepackage{array}
+\usepackage{float}
+\usepackage{pifont}
+\usepackage{soul}
+\usepackage{fancyvrb}
+\usepackage{longtable, supertabular, ltablex, booktabs}
+\usepackage[cache=false]{minted}
+
+\renewcommand{\theFancyVerbLine}{\sffamily
+\textcolor[rgb]{0.5,0.5,1.0}{\scriptsize
+\oldstylenums{\arabic{FancyVerbLine}}}}
+
+% ------------------ Configuración de las tablas -----------------
+\usepackage{makecell}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{caption} 
+\usepackage{diagbox}
+\usepackage{graphicx}
+\captionsetup[table]{skip=10pt}
+
+% ---------------- Definición de colores ----------------------
+\usepackage{xcolor}
+\definecolor{chaptercolor}{HTML}{3725D9}
+\definecolor{sectioncolor}{HTML}{3453F0}
+\definecolor{subsectioncolor}{HTML}{2572D9}
+\definecolor{referencescolor}{HTML}{D589F5}
+\definecolor{pastelgreen}{HTML}{9FF0C0}
+\definecolor{pastelorange}{HTML}{FFF0E3}
+\definecolor{pastelpurple}{HTML}{E2D4FF}
+\definecolor{pastelblue}{HTML}{C6D1FF}
+\definecolor{pastelcyan}{HTML}{BAECFF}
+\definecolor{backgreen}{HTML}{C7F0DA}
+\definecolor{LightGray}{gray}{0.9}
+\definecolor{cellborder}{HTML}{CFCFCF}
+\definecolor{cellbackground}{HTML}{F7F7F7}
+\newcommand{\hlg}[2]{{\sethlcolor{#1} \hl{#2}}}
+\newcommand{\hlgreen}[1]{{\sethlcolor{pastelgreen} \hl{#1}}}
+\newcommand{\hlblue}[1]{{\sethlcolor{pastelblue} \hl{#1}}}
+\newcommand{\hlcyan}[1]{{\sethlcolor{pastelcyan} \hl{#1}}}
+
+% ---------------- Configuración de las cajas -----------------
+\usepackage[most, breakable]{tcolorbox}
+\tcbuselibrary{skins}
+\definecolor{boxborder}{HTML}{8DA6FF}
+\definecolor{boxbackground}{HTML}{E2F6F3}
+\tcbset{
+    enhanced,
+    colback=white,
+    colframe=boxborder,
+    boxrule=1pt, 
+    coltitle=black, 
+    toptitle=1mm, 
+    drop shadow,
+    bottomtitle=1mm, 
+    fonttitle=\bfseries,
+    arc=2mm,
+}
+\newtcolorbox{mathbox}[1][]
+{
+    capture=hbox,
+    halign=flush center,
+    math,
+    #1,
+}
+
+\newtcolorbox{codebox}[1][]
+{
+    enhanced, 
+    breakable,
+    colback=cellbackground,
+    colframe=cellborder,
+    arc=0mm,
+    #1,
+}
+
+
+% -------------- Configuración de los títulos  -------------------
+\usepackage{titlesec}
+\titleformat*{\section}{\bfseries\large}
+\titlespacing*{\section}{0pt}{15pt}{7pt}
+\titleformat*{\subsection}{\normalfont}
+\titlespacing*{\subsection}{0pt}{10pt}{5pt}
+
+
+% -------------------- Configuración portada ---------------------
+\title{\textbf{Automatic covariates selection in dynamic regression models with application to COVID-19 evolution}}
+\author{Ana Xiangning Pereira Ezquerro \\ \texttt{ana.ezquerro@udc.es} \and 
+        Germán Aneiros Pérez \\ \texttt{german.aneiros@udc.es} \and 
+        Manuel Oviedo de la Fuente \\ \texttt{manuel.oviedo@udc.es}}
+\date{Departamento de Matemáticas, Curso 2021-2022}
+
+% ---------------- Configuración de encabezados y pies ------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE, RO]{\footnotesize \rightmark}
+\fancyhead[RE, LO]{\footnotesize Ana Xiangning Pereira Ezquerro}
+\fancyfoot{}
+\fancyfoot[RE, LO]{\footnotesize \textcolor{chaptercolor}{Congreso XoveTIC}}
+\fancyfoot[RO, LE]{\footnotesize \thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+\begin{document}
+\maketitle
+
+In time-series analysis, the well-known dynamic regression models allow formally modelling the dependence between a set of covariates and a dependent variable considering the intrinsic temporal component of all participant variables. Based on a previous study of \cite{cryer2008time} and \cite{hyndman2018forecasting}, a forward-selection method is proposed for adding new significant covariates from a given set to a regression model with their respective optimal lags.
+
+Formally, dynamic linear regression models define the lineal dependence between a stochastic proccess $Y_t$ and a set of proccesses  $\mathcal{X}=\{ X_t^{(1)}, X_t^{(2)}, ..., X_t^{(m)}\}$ in times non-greater than $t$:
+
+\[ Y_t = \beta_0 + \beta_1 X^{(1)}_{t-r_1} + \beta_2 X^{(2)}_{t-r_2} + \cdots + \beta_m  X^{(m)}_{t-r_m} + \eta_t \]
+
+where $r_i \geq 0$, for $i=1,...,m$, and $\eta_t \sim$ ARMA(p,q).
+
+
+\cite{cryer2008time} proposed a method named \textit{prewhitening} for removing spurious correlation between two processes  $X_t$ and $Y_t$ and, thus, cleanly detecting the existence of lineal dependency between them, as well as the optimal lag $r$ dependency occurs in. Following this methodology, our approach adds iteratively dependent processes to a model by checking if a significant correlation (following \cite{cryer2008time} methodology) exists between a new proccess and the residuals $\eta_t$ of the model.
+
+Given a stochastic proccess $Y_t$ and a set of proccesses $\mathcal{X}=\{ X_t^{(1)}, X_t^{(2)}, ..., X_t^{(m)}\}$ which act as regressor variables in the model, and an information criterion for model evaluation, the method proceeds as follows:
+
+\begin{enumerate}
+    \item Search in $\mathcal{X}$ the proccess with its optimal lag that best simple regression model produces, based on the selected information criterion.
+    \[ X^{\text{best}}_t = \underset{X\in\mathcal{X}}{\arg\min} \Big\{ \text{criteria}\big( Y_t = \beta_0 + \beta_1 X_{t-r} + \eta_t\big)\Big\} \] 
+    \item If $X^{\text{best}}_t$ exists, construct the model $\mathcal{M}: Y_t = \beta_0 + \beta_1 X^{\text{best}}_{t-r} + \eta_t$, remove  $X^{\text{best}}$ from $\mathcal{X}$ and proceed iteratively:
+    \begin{enumerate}[label*=\arabic*.]
+        \item Search in $\mathcal{X}$ the proccess  $X^{\text{best}}_t$ such that:
+        \[ X^{\text{best}}_t = \underset{X\in\mathcal{X}}{\arg\min} \Big\{ \text{criteria}\big( \tilde{Y}_t = \beta_0 + \beta_1 X_{t-r} + \eta_t\big)\Big\} \] 
+        restricted to $\text{criteria}\big(\tilde{Y}_t = \beta_0 + \beta_1 X_{t-r} + \eta_t\big) < \text{criteria}(\mathcal{M})$.
+        \item In case of finding such model, consider a new $\mathcal{M}: \tilde{Y}_t = \beta_0 + \beta_1 X^{\text{best}}_t + \eta_t$ and $\tilde{Y}_t = \eta_t$ and return to (2.1). Otherwise, stop the iteration.
+    \end{enumerate}
+    \item The dynamic regression model is formed by the set of proccesses selected as $X^{\text{best}}_t$ in each iteration of the algorithm.
+
+\end{enumerate}
+
+This new proposal has been implemented and optimized in the statistical language \href{https://www.r-project.org/}{R} as a package, and it has been applied to multiple simulations to validate its performance. Finally, the obtained results from the IRAS database of Catalonia are presented to analyze the COVID-19 evolution.
+
+\bibliography{bibliography}
+\bibliographystyle{apalike}
+
+
+\end{document}
+

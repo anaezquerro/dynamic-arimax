@@ -83,8 +83,8 @@ plot_residuals <- function(ajuste, title='Gráfico secuencia de los residuos', a
   bounds <- sqrt(ajuste$sigma2)*3
   x_grid <- seq(from=-bounds, to=bounds, by=2*bounds/1000)
   
-  hist_residuals <- ggplot(data=NULL, aes(x=ajuste$residuals)) + 
-    geom_histogram(aes(y=..density..), fill='lightblue', color='grey') +
+  hist_residuals <- ggplot(data=NULL, aes(x=c(ajuste$residuals))) + 
+    geom_histogram(aes(y=..density..), fill='lightblue', color='grey', binwidth=0.1) +
     geom_rug(color='grey') + 
     geom_line(aes(x=x_grid, y=dnorm(x_grid, sd=sqrt(ajuste$sigma2))), 
               color='orange')

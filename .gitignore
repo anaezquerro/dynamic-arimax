@@ -14,7 +14,10 @@ vignettes/*.pdf
 /cache/
 .Renviron
 .Rproj.user/
+.DS_Store
+*.zip
 
+# folders
 
 # latex
 *.aux
@@ -40,21 +43,3 @@ vignettes/*.pdf
 *.bbl
 *.blg
 *.hd
-
-
-
-
-# gitignore for main 
-iras/
-jornadaR/
-results/
-simulations/
-xovetic/
-Documentación_files/
-.DS_Store
-figures/*.pdf
-documentation/
-new-functions.R
-parser_data.R
-plot_figures.R
-sequential.R
