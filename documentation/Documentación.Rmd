@@ -47,10 +47,10 @@ lang: es
 # Cargamos las funciones
 knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
                       fig.height = 8, message=F, comment='', warning=F)
-eval(parse("plot-tools.R", encoding="UTF-8"))
-eval(parse("auto-fit.R", encoding="UTF-8"))
-eval(parse("auto-select.R", encoding="UTF-8"))
-eval(parse("forecasting.R", encoding="UTF-8"))
+eval(parse("../plot-tools.R", encoding="UTF-8"))
+eval(parse("../auto-fit.R", encoding="UTF-8"))
+eval(parse("../auto-select.R", encoding="UTF-8"))
+eval(parse("../forecasting.R", encoding="UTF-8"))
 
 # Librerías de series temporales
 library(fpp2)
@@ -145,7 +145,7 @@ display(result_gripe$fig_residuals, "residuals gripe", width=1000, height=800)
 **Ejemplo de uso**: [Nivel mensual de dióxido de carbono (Co2) medido en el Observatorio de Mauna Loa (Hawaii)](ftp://ftp.cmdl.noaa.gov/ccg/co2/trends/co2_mm_mlo.txt). La serie comienza en Marzo de 1958.
 
 ```{r}
-co2 <- ts(scan('data/co2MaunaLoa.dat'), start=c(1958, 3), frequency=12)
+co2 <- ts(scan('../data/co2MaunaLoa.dat'), start=c(1958, 3), frequency=12)
 result_co2 <- auto.fit.arima(co2, ic="aicc", plot_result=TRUE)
 display(result_co2$fig_serie, "serie co2", width=1000, height=800)
 display(result_co2$fig_residuals, "residuals co2", width=1000, height=800)
@@ -189,7 +189,7 @@ drm.select(serie, xregs, ic = c("aicc", "aic", "bic"),
 **Ejemplo de uso**: Logaritmo de las ventas semanales y el precio de patatas fritas *Bluebird* de Nueva Zelanda. El período de observación es de 104 semanas (desde el 20 de Septiembre de 1988 hasta el 10 de Septiembre de 2000).
 
 ```{r}
-load("data/patatas.dat")
+load("../data/patatas.dat")
 Y <- patatas[,1]   
 X <- ts(matrix(patatas[,2]))
 colnames(X) <- c('X')

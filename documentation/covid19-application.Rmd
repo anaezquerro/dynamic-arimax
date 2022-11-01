@@ -47,11 +47,10 @@ lang: es
 # Cargamos las funciones
 knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
                       fig.height = 8, message=F, comment='', warning=F)
-eval(parse("plot_tools.R", encoding="UTF-8"))
-eval(parse("arima_simulation.R", encoding="UTF-8"))
-eval(parse("auto_fitting.R", encoding="UTF-8"))
-eval(parse("auto_selection.R", encoding="UTF-8"))
-eval(parse("forecasting.R", encoding="UTF-8"))
+eval(parse("../plot-tools.R", encoding="UTF-8"))
+eval(parse("../auto-fit.R", encoding="UTF-8"))
+eval(parse("../auto-select.R", encoding="UTF-8"))
+eval(parse("../forecasting.R", encoding="UTF-8"))
 
 # Librerías de series temporales
 library(fpp2)
@@ -150,7 +149,7 @@ Note that age ranges in vaccination and IRAS data do not match. This is due to t
 
 
 ```{r}
-cataluna <- read.csv("data/evolucion_gripe_covid.csv")
+cataluna <- read.csv("../data/evolucion_gripe_covid.csv")
 ```
 
 
