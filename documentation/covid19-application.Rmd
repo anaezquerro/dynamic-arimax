@@ -232,7 +232,7 @@ fig <- fig %>% layout(
     )
 )
 
-display(plot_forecast(preds), name='preds_covid19_vac')
+display(fig, name='preds_covid19_vac')
 ```
 
 
