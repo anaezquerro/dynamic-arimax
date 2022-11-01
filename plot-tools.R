@@ -1,5 +1,6 @@
 library(plotly)
-
+library(reticulate)
+reticulate::py_run_string('import sys, kaleido')
 
 
 
