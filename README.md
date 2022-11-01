@@ -29,7 +29,7 @@ Once [R](https://www.r-project.org/),  [RStudio IDE](https://www.rstudio.com/pro
 
 ## Structure of the module
 
-- `auto-fit.R`: Implementation of automatic fitting in ARIMA or ARIMAX models. It uses the [`forcast::auto.arima()`](https://www.rdocumentation.org/packages/forecast/versions/8.17.0) function and iteratively removes non-significative coefficients.
+- `auto-fit.R`: Implementation of automatic fitting in ARIMA or ARIMAX models. It uses the [`forecast::auto.arima()`](https://www.rdocumentation.org/packages/forecast/versions/8.17.0) function and iteratively removes non-significative coefficients.
 - `auto-select.R`: Implementation of the covariates selection method and their respective correlation lags. For more information we suggest reading the proceedings attached to the repository.
 - `forecasting.R`: Implementation of dynamic regression models forecasting once a model has been fitted with the selection function.
 - `plot-tools.R`: Script for fancy Plotly graphics.
