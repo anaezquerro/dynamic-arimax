@@ -2,7 +2,6 @@ PAD <- 86
 
 
 
-
 #' README:
 #' This script contains the necessary functions to automatically select the 
 #' ARIMAX covariates from a set of candidates.

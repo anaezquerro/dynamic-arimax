@@ -56,8 +56,8 @@ sig_lines <- data.frame(x=rep(min(lags), 2), xend=rep(max(lags), 2),
 
 
 fig_original <- plot_ly() %>% 
-    add_bars(x=c(acfs$lag), y=c(acfs$acf), type='bar', 
-             width=(max(acfs$lag) - min(acfs$lag))/200, 
+    add_bars(x=c(lags), y=c(ccfs), type='bar', 
+             width=(max(lags) - min(lags))/200, 
              marker=list(color='grey'), showlegend=F) %>%
     add_segments(data=sig_lines, x=~x, xend=~xend, y=~y, yend=~yend,
                  line=list(color='blue', dash='dot'), showlegend=F,
@@ -77,7 +77,7 @@ sig_lines_prewhiten <- data.frame(x=rep(min(lags_prewhiten), 2), xend=rep(max(la
 
 fig_prewhiten <- plot_ly() %>% 
     add_bars(x=c(lags_prewhiten), y=c(ccfs_prewhiten), type='bar', 
-             width=(max(lags_prewhiten) - min(acfs$lag))/200, 
+             width=(max(lags_prewhiten) - min(lags))/200, 
              marker=list(color='grey'), showlegend=F) %>%
     add_segments(data=sig_lines_prewhiten, x=~x, xend=~xend, y=~y, yend=~yend,
                  line=list(color='blue', dash='dot'), showlegend=F,
@@ -92,7 +92,7 @@ fig_prewhiten <- plot_ly() %>%
 fig_ccfs <- subplot(fig_original, fig_prewhiten, nrows=2, margin=0.07)
 
 fig <- subplot(fig_series, fig_ccfs, nrows=1, widths=c(0.6, 0.4), margin=0.03)
-save_image(fig, file='figures/example prewhitening.pdf', height=700, width=1300)
+save_image(fig, file='documentation/figures/example prewhitening.pdf', height=700, width=1300)
 fig
 
 

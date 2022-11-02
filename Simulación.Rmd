@@ -47,11 +47,11 @@ lang: es
 # Cargamos las funciones
 knitr::opts_chunk$set(fig.align='center', fig.width = 10, 
                       fig.height = 8, message=F, comment='', warning=F)
-eval(parse("../plot-tools.R", encoding="UTF-8"))
-eval(parse("../auto-fit.R", encoding="UTF-8"))
-eval(parse("../auto-select.R", encoding="UTF-8"))
-eval(parse("../forecasting.R", encoding="UTF-8"))
-eval(parse('../arima-generation.R', encoding='UTF-8'))
+eval(parse("plot-tools.R", encoding="UTF-8"))
+eval(parse("auto-fit.R", encoding="UTF-8"))
+eval(parse("auto-select.R", encoding="UTF-8"))
+eval(parse("forecasting.R", encoding="UTF-8"))
+eval(parse('arima-simulation.R', encoding='UTF-8'))
 
 # Librerías de series temporales
 library(fpp2)
@@ -130,26 +130,26 @@ Supongamos otro conjunto de variables (que siguen también un proceso ARIMA) que
 
 ```{r}
 # Cargamos los datos sobre las variables regresoras
-load(file='../simulations/X1 ~ ARIMA(2,1,3).RData')        # X1
-load(file='../simulations/X2 ~ ARIMA(1,1,2).RData')        # X2
-load(file='../simulations/X3 ~ ARIMA(1,0,2).RData')        # X3
-load(file='../simulations/residuals ~ ARIMA(2,0,1).RData') # residuos
+load(file='simulations/X1 ~ ARIMA(2,1,3).RData')        # X1
+load(file='simulations/X2 ~ ARIMA(1,1,2).RData')        # X2
+load(file='simulations/X3 ~ ARIMA(1,0,2).RData')        # X3
+load(file='simulations/residuals ~ ARIMA(2,0,1).RData') # residuos
 
 # Cargamos las variables independientes
-load(file='../simulations/X4 ~ ARIMA(1,0,3).RData')        # X4
-load(file='../simulations/X5 ~ ARIMA(2,1,2).RData')        # X5
-load(file='../simulations/X6 ~ ARIMA(2,1,1).RData')        # X6
+load(file='simulations/X4 ~ ARIMA(1,0,3).RData')        # X4
+load(file='simulations/X5 ~ ARIMA(2,1,2).RData')        # X5
+load(file='simulations/X6 ~ ARIMA(2,1,1).RData')        # X6
 ```
 
 Se puede realizar una comprobación de que estas series siguen los procesos ARIMA mencionados. Para chequearlo, consulte el [apéndice](#apendice) del documento.
 
-**Selección de variables y ajuste del modelo**: Creamos el modelo y comprobamos la solución final de la función `drm.select()`.
+**Selección de variables y ajuste del modelo**: Creamos el modelo y comprobamos la solución final de la función `auto.fit.arima.regression()`.
 
 ```{r}
 beta0 <- 0.8; beta1 <- 2.8; beta2 <- -1.12; beta3 <- -2.3
 Y <- beta0 + beta1 * X1$X + beta2 * X2$X + beta3 * X3$X + residuals$X
 regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-ajuste <- drm.select(Y, regresoras, show_info=T)
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T)
 ```
 
 
@@ -202,7 +202,8 @@ Y <- beta0 + beta1 * lag(X1$X, -r1) + beta2 * X2$X + beta3 * lag(X3$X, -r3) +
 
 ```{r}
 regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-ajuste <- drm.select(Y, regresoras, show_info=T, st_method='adf.test')
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T,  
+                                    stationary_method='adf.test')
 ```
 
 De nuevo, observando el *output* de la función podemos analizar la selección de variables:
@@ -254,7 +255,7 @@ Y las variables que no interfieren en $Y$ (las mismas que en el [primer ejemplo]
 
 ```{r}
 # cargamos únicamente los residuos no estacionarios
-load('../simulations/residuals ~ ARIMA(1,2,2).RData')
+load('simulations/residuals ~ ARIMA(1,2,2).RData')
 
 # volvemos a generar la variable respuesta 
 beta0 <- 0.8; beta1 <- -1.3; beta2 <- 2.12; beta3 <- 2.3
@@ -265,14 +266,14 @@ Y <- beta0 + beta1 * X1$X + beta2 * X2$X + beta3 * X3$X + 2.1*residuals$X
 
 ```{r}
 regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-ajuste <- drm.select(Y, regresoras, show_info=T) 
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T) 
 ```
 
 
 
 Si volvemos a analizar el *output* de la consola observamos que se ha realizado una diferenciación regular a los datos (dobles líneas horizontales) para conseguir un ajuste en el que los errores fuesen estacionarios.
 
-1. En las primeras iteraciones se añaden, en este orden, las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$ con retardos nulos, mejorando el AICc iterativamente hasta alcanzar un valor de AICc=-1613.80360585469. Como el modelo ajustado con estas tres variables regresoras no tiene errores estacionarios (se ajustó un ARIMA(2,1,1) para los residuos), se intenta ajustar un modelo donde el orden de $d$ sea nulo. Como no se puede optimizar ("`No se ha podido encontrar un modelo válido con errores estacionarios...`"), se procede a aplicar una diferenciación regular a todos los datos, tanto variable respuesta como conjunto de posibles variables regresoras, y se vuelve a llamar a la función `drm.select()` con los datos diferenciados.
+1. En las primeras iteraciones se añaden, en este orden, las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$ con retardos nulos, mejorando el AICc iterativamente hasta alcanzar un valor de AICc=-1613.80360585469. Como el modelo ajustado con estas tres variables regresoras no tiene errores estacionarios (se ajustó un ARIMA(2,1,1) para los residuos), se intenta ajustar un modelo donde el orden de $d$ sea nulo. Como no se puede optimizar ("`No se ha podido encontrar un modelo válido con errores estacionarios...`"), se procede a aplicar una diferenciación regular a todos los datos, tanto variable respuesta como conjunto de posibles variables regresoras, y se vuelve a llamar a la función `auto.fit.arima.regression()` con los datos diferenciados.
 2. En la siguiente llamada a la función se consigue añadir al modelo, en este orden, las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$ con retardos nulos, y se ajusta un ARIMA(0,1,0) para los errores de regresión. No obstante, como este ajuste no cumple la condición de errores estacionarios, se intenta ajustar un ARIMA para los errores donde $d=0$. En este caso sí se consigue optimizar un modelo que respeta dicha condición, obteniendo un ajuste donde los residuos son estacionarios y el AICc=-1613.8.
 
 
@@ -307,7 +308,8 @@ Y <- beta0 + beta1 * lag(X1$X, -r1) + beta2 * X2$X +
 
 ```{r}
 regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-ajuste <- drm.select(Y, regresoras, show_info=T, st_method='adf.test')
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T, 
+                                    stationary_method='adf.test')
 ```
 
 Como podemos observar, el *output* es muy similar al obtenido en el [ejemplo anterior](#ejemplo3). En las primeras iteraciones se añaden las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$, en ese orden, con retardos $r_3=1$, $r_2=0$ y $r_1=1$ (correcto según la definición del modelo), pero al no poder ajustar un modelo con errores estacionarios (se obtiene un modelo con errores ARIMA(2,1,1)), se tienen que diferenciar los datos y volver a llamar a la función.
@@ -321,7 +323,7 @@ En la siguiente llamada, se vuelven a añadir las mismas variables con los retar
 ## Con errores estacionarios
 
 ```{r}
-load(file='../simulations/residuals ~ ARIMA(2,0,1).RData') # residuals
+load(file='simulations/residuals ~ ARIMA(2,0,1).RData') # residuals
 beta0 <- -0.1; beta1 <- 3.2; beta2 <- -2.5
 r1 <- 2; r2 <- 3
 Y <- beta0 + beta1 * lag(X1$X, -r1) + beta2 * lag(X2$X, -r2) + residuals$X
@@ -331,20 +333,21 @@ regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
 Ajustamos un modelo usando como método para chequear estacionariedad la función `auto.arima`:
 
 ```{r}
-ajuste <- drm.select(Y, regresoras, show_info=T, 
-                                    st_method='auto.arima')
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T, 
+                                    stationary_method='auto.arima')
 ```
 
 Ajustamos un modelo usando como método para chequear estacionariedad el `adf.test`:
 
 ```{r}
-ajuste <- drm.select(Y, regresoras, show_info=T, st_method='adf.test')
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T,
+                                    stationary_method='adf.test')
 ```
 
 ## Con errores no estacionarios
 
 ```{r}
-load(file='../simulations/residuals ~ ARIMA(1,2,2).RData') # residuals
+load(file='simulations/residuals ~ ARIMA(1,2,2).RData') # residuals
 beta0 <- -0.1; beta1 <- 3.2; beta2 <- -2.5
 r1 <- 2; r2 <- 3
 Y <- beta0 + beta1 * lag(X1$X, -r1) + beta2 * lag(X2$X, -r2) + residuals$X
@@ -354,13 +357,15 @@ regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
 Ajustamos un modelo usando como método para chequear estacionariedad la función `auto.arima`:
 
 ```{r}
-ajuste <- drm.select(Y, regresoras, show_info=T, st_method='auto.arima')
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T, 
+                                    stationary_method='auto.arima')
 ```
 
 Ajustamos un modelo usando como método para chequear estacionariedad el `adf.test`:
 
 ```{r}
-ajuste <- drm.select(Y, regresoras, show_info=T, st_method='adf.test')
+ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T,
+                                    stationary_method='adf.test')
 ```
 
 
@@ -373,7 +378,7 @@ En esta sección se muestra la comprobación con la función `auto.fit.arima` de
 Para el [primer ejempo](#ejemplo1), las muestras simuladas eran las siguientes:
 
 ```{r}
-load(file='../simulations/residuals ~ ARIMA(2,0,1).RData') # residuals
+load(file='simulations/residuals ~ ARIMA(2,0,1).RData') # residuals
 ```
 
 Si la función `auto.fit.arima` y observamos los *outputs*, vemos que siguen el proceso ARIMA anotado:
@@ -391,7 +396,7 @@ auto.fit.arima(X6$X, show_info=F)
 Podemos hacer la misma comprobación con los residuos del [ejemplo 2](#ejemplo2).
 
 ```{r}
-load('../simulations/residuals ~ ARIMA(1,2,2).RData')
+load('simulations/residuals ~ ARIMA(1,2,2).RData')
 auto.fit.arima(residuals$X, show_info=F)
 ```
 
