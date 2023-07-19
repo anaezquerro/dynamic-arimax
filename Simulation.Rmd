@@ -156,7 +156,7 @@ X5 <- sim.arima(model=list(p=2, d=1, q=2), n=N, with.constant=FALSE)
 X6 <- sim.arima(model=list(p=2, d=1, q=1), n=N, with.constant=FALSE)
 ```
 
-**Covariates selection and model fitting**: We create the target variable and test the final result of the selection function `auto.fit.arima.regression()`:
+**Covariates selection and model fitting**: We create the target variable and test the final result of the selection function `drm.select()`:
 
 
 ```{r}
@@ -212,13 +212,9 @@ Y <- beta0 + beta1 * lag(X1$X, -r1) + beta2 * X2$X + beta3 * lag(X3$X, -r3) +
 regressors <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
 model <- drm.select(Y, regressors, show_info=T, st_method='adf.test')
 ```
+In the output of our function we see our method's selection:
 
-De nuevo, observando el *output* de la función podemos analizar la selección de variables:
-
-1. Primero se selecciona la variable $X_t^{(2)}$ con retardo nulo, construyendo un modelo de regresión con errores que siguen un ARIMA(4,1,0) y un AICc=-1156.68486061937.
-2. En la siguiente iteración se selecciona la variable $X_t^{(1)}$ con un retardo $r_1=2$, mejorando el AICc del modelo anterior con un nuevo AICc=-2171.66958134745.
-3. En la siguiente iteración se añade la variable $X_t^{(3)}$ con retardo $r_3=3$ al construir un modelo de regresión con variables regresoras $X_t^{(1)}$, $X_t^{(2)}$ y $X_t^{(3)}$ con respectivos retardos $r_1=2$, $r_2=0$ y $r_3=3$, consiguiendo un AICc=-3108.15443209894.
-4. En la siguiente iteración no se encuentran retardos significativos para $X_t^{(4)}$ y $X_t^{(6)}$, pero sí para $X_t^{(5)}$ con un retardo $r_5=8$.. No obstante, añadir esta variable al modelo no supone mejorar el AICc del modelo anterior (sólo se consigue un AICc=-3106.1490878263). Por tanto se detiene la selección de varaibles.
+1. 
 
 Como el mejor modelo conseguido (el de la tercera iteración) ya tiene errores estacionarios (siguen un ARIMA(0,0,4)), se escoge dicho ajuste para modelizar la dependencia entre $Y$ y las variables regresoras escogidas.
 
@@ -273,14 +269,14 @@ Y <- beta0 + beta1 * X1$X + beta2 * X2$X + beta3 * X3$X + 2.1*residuals$X
 
 ```{r}
 regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T) 
+ajuste <- drm.select(Y, regresoras, show_info=T) 
 ```
 
 
 
 Si volvemos a analizar el *output* de la consola observamos que se ha realizado una diferenciación regular a los datos (dobles líneas horizontales) para conseguir un ajuste en el que los errores fuesen estacionarios.
 
-1. En las primeras iteraciones se añaden, en este orden, las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$ con retardos nulos, mejorando el AICc iterativamente hasta alcanzar un valor de AICc=-1613.80360585469. Como el modelo ajustado con estas tres variables regresoras no tiene errores estacionarios (se ajustó un ARIMA(2,1,1) para los residuos), se intenta ajustar un modelo donde el orden de $d$ sea nulo. Como no se puede optimizar ("`No se ha podido encontrar un modelo válido con errores estacionarios...`"), se procede a aplicar una diferenciación regular a todos los datos, tanto variable respuesta como conjunto de posibles variables regresoras, y se vuelve a llamar a la función `auto.fit.arima.regression()` con los datos diferenciados.
+1. En las primeras iteraciones se añaden, en este orden, las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$ con retardos nulos, mejorando el AICc iterativamente hasta alcanzar un valor de AICc=-1613.80360585469. Como el modelo ajustado con estas tres variables regresoras no tiene errores estacionarios (se ajustó un ARIMA(2,1,1) para los residuos), se intenta ajustar un modelo donde el orden de $d$ sea nulo. Como no se puede optimizar ("`No se ha podido encontrar un modelo válido con errores estacionarios...`"), se procede a aplicar una diferenciación regular a todos los datos, tanto variable respuesta como conjunto de posibles variables regresoras, y se vuelve a llamar a la función `drm.select()` con los datos diferenciados.
 2. En la siguiente llamada a la función se consigue añadir al modelo, en este orden, las variables $X_t^{(3)}$, $X_t^{(2)}$ y $X_t^{(1)}$ con retardos nulos, y se ajusta un ARIMA(0,1,0) para los errores de regresión. No obstante, como este ajuste no cumple la condición de errores estacionarios, se intenta ajustar un ARIMA para los errores donde $d=0$. En este caso sí se consigue optimizar un modelo que respeta dicha condición, obteniendo un ajuste donde los residuos son estacionarios y el AICc=-1613.8.
 
 
@@ -315,7 +311,7 @@ Y <- beta0 + beta1 * lag(X1$X, -r1) + beta2 * X2$X +
 
 ```{r}
 regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
-ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T, 
+ajuste <- drm.select(Y, regresoras, show_info=T, 
                                     stationary_method='adf.test')
 ```
 
@@ -340,14 +336,14 @@ regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
 Ajustamos un modelo usando como método para chequear estacionariedad la función `auto.arima`:
 
 ```{r}
-ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T, 
+ajuste <- drm.select(Y, regresoras, show_info=T, 
                                     stationary_method='auto.arima')
 ```
 
 Ajustamos un modelo usando como método para chequear estacionariedad el `adf.test`:
 
 ```{r}
-ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T,
+ajuste <- drm.select(Y, regresoras, show_info=T,
                                     stationary_method='adf.test')
 ```
 
@@ -364,14 +360,14 @@ regresoras <- cbind(X1=X1$X, X2=X2$X, X3=X3$X, X4=X4$X, X5=X5$X, X6=X6$X)
 Ajustamos un modelo usando como método para chequear estacionariedad la función `auto.arima`:
 
 ```{r}
-ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T, 
+ajuste <- drm.select(Y, regresoras, show_info=T, 
                                     stationary_method='auto.arima')
 ```
 
 Ajustamos un modelo usando como método para chequear estacionariedad el `adf.test`:
 
 ```{r}
-ajuste <- auto.fit.arima.regression(Y, regresoras, show_info=T,
+ajuste <- drm.select(Y, regresoras, show_info=T,
                                     stationary_method='adf.test')
 ```
 
