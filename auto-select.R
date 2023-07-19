@@ -1,6 +1,14 @@
 PAD <- 86
 
-
+library(parallel)
+library(stringi)
+library(stringr)
+library(tseries)
+library(fpp2)
+library(TSA)
+library(seastests)
+library(forecast)
+library(polynom)
 
 
 #' README:

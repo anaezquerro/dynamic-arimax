@@ -2,8 +2,8 @@
 
 # install required packages
 requirements <- c('fpp2', 'tseries', 'TSA', 'forecast', 'seastests', 'forecast', 
-                  'plotly', 'prettydoc', 'stringi', 'stringr', 'polynom', 
-                  'parallel', 'Rcpp', 'RcppTOML', 'reticulate')
+                  'libcurl', 'httr', 'plotly', 'prettydoc', 'stringi', 'stringr', 
+                  'polynom', 'parallel', 'Rcpp', 'RcppTOML', 'reticulate')
 installed <- .packages(all.available = TRUE)
 
 for (package in requirements) {

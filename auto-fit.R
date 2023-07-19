@@ -7,7 +7,9 @@
 
 
 PAD <- 86  # display-info parameter 
-
+library(tseries)
+library(TSA)
+library(fpp2)
 
 
 #' **Automatic fitting of ARIMA or ARIMAX model**

@@ -161,20 +161,19 @@ sim.arima <- function(model=list(p=0, d=0, q=0), n=1000, with.constant=FALSE,
     
     
     # Comprobación
-    # ajuste <- auto.fit.arima(result$X, show_info=F)
-    # 
-    # if (is_valid(ajuste)) {
-    #     valid <- (model$p == ajuste$arma[1]) & (model$q == ajuste$arma[2]) & (model$d == ajuste$arma[6]) & 
-    #         (('intercept' %in% names(ajuste$coef)) == with.constant)
-    # } else {
-    #     valid <- F
-    # }
-    # 
-    # 
-    # if (valid) {
-    #     return(result)
-    # } else {
-    #     return(sim.arima(model, n, with.constant, x_ini_mean))
-    # }
+    ajuste <- auto.fit.arima(result$X, show_info=F)
+     
+    if (is_valid(ajuste)) {
+       valid <- (model$p == ajuste$arma[1]) & (model$q == ajuste$arma[2]) & (model$d == ajuste$arma[6]) & 
+           (('intercept' %in% names(ajuste$coef)) == with.constant)
+    } else {
+       valid <- F
+    }
     
+    
+    if (valid) {
+       return(result)
+    } else {
+       return(sim.arima(model, n, with.constant, x_ini_mean))
+    }
 }

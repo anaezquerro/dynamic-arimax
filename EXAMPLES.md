@@ -11,14 +11,14 @@
 **Description**: Obtains a valid fitted ARIMA or ARIMAX model that
 optimizes a selected information criterion and satisfies that:
 
-1.  All coefficients are statistically significtive.
+1.  All coefficients are statistically significative.
 2.  Model residuals have zero mean and are independent.
 
 **Returns**:
 
 1.  Fitted ARIMA or ARIMAX model (`Arima` object) if it exists and it
     can be optimized.
-2.  `NA` in case it does not exists and/or cannnot be optimized.
+2.  `NA` in case it does not exists and/or can not be optimized.
 
 ``` r
 auto.fit.arima(serie, xregs = NULL,  ic = c("aicc", "aic", "bic"), d = NA, 
