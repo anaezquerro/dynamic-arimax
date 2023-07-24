@@ -138,7 +138,7 @@ is_norm <- function(fitted_model, alpha=0.05) {
 } 
 
 
-#' Auxiliar function which makes the inverse of the diff() function (given the 
+#' Auxiliary function which makes the inverse of the diff() function (given the 
 #' first original value which we lose after the differentiation).
 #' 
 #' @param x [ts]: Differentiated time series.
@@ -161,12 +161,12 @@ undiff <- function(x, previous) {
     return(ts(x_undiff, end=end(x)))
 }
 
-#' Auxiliar function that applies multiple `undiffs`.
+#' Auxiliary function that applies multiple `undiffs`.
 #' @param x [ts]: Differentiated time series.
 #' @param previous [numeric]: First value of the original serie.
 #' @param ndiff [numeric]: Number of undiffs that are applied.
 #' 
-#' @returns Origial data.
+#' @returns Original data.
 mul_undiff <- function(x, previous, ndiff) {
     if (class(x) != 'ts') {stop('El objeto x debe ser de tipo ts')}
     if (length(previous) != ndiff) {stop('No hay datos suficientes')}
@@ -180,7 +180,7 @@ mul_undiff <- function(x, previous, ndiff) {
 }
 
 
-#' Auxiliar function that applies multiple regular differentiations.
+#' Auxiliary function that applies multiple regular differentiations.
 #' 
 #' @param x [ts]: Univariate time series.
 #' @param ndiff [numeric]: Number of regular differentiations that are applied.

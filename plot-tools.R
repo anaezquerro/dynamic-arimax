@@ -4,15 +4,15 @@ reticulate::py_run_string('import sys, kaleido')
 
 
 
-#' Visualización de la información básica sobre series temporales.
+#' Visualization of the basic information about time series.
 #'
-#' @param serie : Serie temporal de entrada.
-#' @param title : Título del gráfica secuencial (por defecto, "Gráfico secuencial")
+#' @param serie : Input time series
+#' @param title : Title of the sequencial plot (default, "Sequential plot")
 #' @param alpha : Significance level of ACF and PACF barplot.
 #'
 #' @return `plotly` figure with sequential plot and ACF and PACF barplots.
 #' @export
-plot_serie <- function(serie, title='Gráfico secuencial', alpha=0.05) {
+plot_serie <- function(serie, title='Sequential plot', alpha=0.05) {
   if (class(serie) != 'ts') { stop('El parámetro serie debe ser un objeto de tipo ts.') }
   
   # Gráfico secuencial
@@ -27,7 +27,7 @@ plot_serie <- function(serie, title='Gráfico secuencial', alpha=0.05) {
            )
     )
   
-  # Gráfico de correlaciones simples
+  # Simple correlations plot
   acfs <- acf(serie, plot=F)
   stat <- qnorm(1-alpha/2)/sqrt(acfs$n.used)
   sig_lines <- data.frame(x=c(0, 0), xend=rep(max(acfs$lag), 2), 
@@ -47,7 +47,7 @@ plot_serie <- function(serie, title='Gráfico secuencial', alpha=0.05) {
            )
     )
   
-  # Gráfico de correlaciones parciales
+  # Partial correlations plot
   pacfs <- pacf(serie, plot=F)
   pstat <- qnorm(1-alpha/2)/sqrt(pacfs$n.used)
   psig_lines <- data.frame(x=c(0, 0), xend=rep(max(pacfs$lag), 2),

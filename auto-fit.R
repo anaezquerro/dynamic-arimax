@@ -4,8 +4,6 @@
 #' ARIMAX models with statistically significative coefficients with valid 
 #' residuals (i.e. with zero mean and independent)
 
-
-
 PAD <- 86  # display-info parameter 
 library(tseries)
 library(TSA)
@@ -14,7 +12,7 @@ library(fpp2)
 
 #' **Automatic fitting of ARIMA or ARIMAX model**
 #' 
-#' Implementaton of the ARIMA or ARIMAX model selection that optimizes selected 
+#' Implementation of the ARIMA or ARIMAX model selection that optimizes selected 
 #' information criterion and satisifies that:
 #' 
 #' 1) All coefficients are statistically significative.
