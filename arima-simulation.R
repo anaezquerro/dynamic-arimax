@@ -1,5 +1,4 @@
 library(polynom)
-eval(parse("auto-fit.R", encoding="UTF-8"))
 
 generate.ar.coef <- function(order) {
     if (order <= 0) {stop('Order coefficients must be greater than 0')}
