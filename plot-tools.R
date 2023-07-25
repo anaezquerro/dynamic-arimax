@@ -15,7 +15,7 @@ reticulate::py_run_string('import sys, kaleido')
 plot_serie <- function(serie, title='Sequential plot', alpha=0.05) {
   if (class(serie) != 'ts') { stop('El parámetro serie debe ser un objeto de tipo ts.') }
   
-  # Gráfico secuencial
+  # Sequential plot
   seq_plot <- plot_ly(type='scatter', mode='lines') %>%
     add_trace(x=time(serie), y=serie, 
               line=list(color='grey'), name=title, showlegend=F) %>%
