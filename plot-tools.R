@@ -7,7 +7,7 @@ reticulate::py_run_string('import sys, kaleido')
 #' Visualization of the basic information about time series.
 #'
 #' @param serie : Input time series
-#' @param title : Title of the sequencial plot (default, "Sequential plot")
+#' @param title : Title of the sequential plot (default, "Sequential plot")
 #' @param alpha : Significance level of ACF and PACF barplot.
 #'
 #' @return `plotly` figure with sequential plot and ACF and PACF barplots.
