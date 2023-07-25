@@ -25,21 +25,21 @@ In order to use this implementation and run all files, the following prerequisit
 - R packages: [`fpp2`](https://cran.r-project.org/web/packages/fpp2/index.html), [`tseries`](https://cran.r-project.org/web/packages/tseries/index.html), [`TSA`](https://cran.r-project.org/web/packages/TSA/index.html), [`seastests`](https://cran.r-project.org/web/packages/seastests/index.html), [`forecast`](https://cran.r-project.org/web/packages/forecast/index.html), [`plotly`](https://plotly.com/r/), [`prettydoc`](https://prettydoc.statr.me/), [`stringi`](https://cran.r-project.org/web/packages/stringi/index.html), [`stringr`](https://cran.r-project.org/web/packages/stringr/index.html), [`polynom`](https://cran.r-project.org/web/packages/polynom/index.html), [`parallel`](https://stat.ethz.ch/R-manual/R-devel/library/parallel/doc/parallel.pdf).
 - [rtools](https://cran.r-project.org/bin/windows/Rtools/).
 
-Once [R](https://www.r-project.org/),  [RStudio IDE](https://www.rstudio.com/products/rstudio/download/) and [rtools](https://cran.r-project.org/bin/windows/Rtools/) have been installed, you can run `installation.R` to automatically install all R-packages needed.
+Once [R](https://www.r-project.org/),  [RStudio IDE](https://www.rstudio.com/products/rstudio/download/) and [rtools](https://cran.r-project.org/bin/windows/Rtools/) have been installed, you can run [`installation.R`](installation.R) to automatically install all R-packages needed.
 
 ## Structure of the module
 
-- `auto-fit.R`: Implementation of automatic fitting in ARIMA or ARIMAX models. It uses the [`forecast::auto.arima()`](https://www.rdocumentation.org/packages/forecast/versions/8.17.0) function and iteratively removes non-significative coefficients.
-- `auto-select.R`: Implementation of the covariates selection method and their respective correlation lags. For more information we suggest reading the proceedings attached to the repository.
-- `forecasting.R`: Implementation of dynamic regression models forecasting once a model has been fitted with the selection function.
-- `plot-tools.R`: Script for fancy Plotly graphics.
-- `figures/`: Folder where Plotly figures are saved.
-- `data/`: Datasets needed to run  examples in [`EXAMPLES.md`](EXAMPLES.md).
+- [`auto-fit.R`](auto-fit.R): Implementation of automatic fitting in ARIMA or ARIMAX models. It uses the [`forecast::auto.arima()`](https://www.rdocumentation.org/packages/forecast/versions/8.17.0) function and iteratively removes non-significative coefficients.
+- [`auto-select.R`](auto-select.R): Implementation of the covariates selection method and their respective correlation lags. For more information we suggest reading the proceedings attached to the repository.
+- [`forecasting.R`](forecasting.R): Implementation of dynamic regression models forecasting once a model has been fitted with the selection function.
+- [`plot-tools.R`](plot-tools.R): Script for fancy Plotly graphics.
+- [`documentation/`](documentation/): Folder where documentation examples are provided.
+- [`data/`](data/): Datasets needed to run  examples in [`EXAMPLES.md`](EXAMPLES.md).
 
 
 ## Documentation and examples 
 
-Consult a detailed documentation of the code and examples of use in [`EXAMPLES.md`](EXAMPLES.md) file.
+Consult a detailed documentation of the code and examples of use in [`Documentation.html`](documentation/Documentation.html) file.
 
 
 
