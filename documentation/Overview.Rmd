@@ -36,7 +36,6 @@ header-includes:
 - \usepackage{xcolor}
 - \input{confi.tex}
 always_allow_html: yes
-bibliography: references.bib
 biblio-style: bwl-FU
 linkcitations: true
 linkcolor: blue

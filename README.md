@@ -21,9 +21,9 @@ For any suggestion or issue with our code, please [contact us](mailto:ana.ezquer
 
 In order to use this implementation and run all files, the following prerequisites are needed:
 
-- [R](https://www.r-project.org/) and [RStudio IDE](https://www.rstudio.com/products/rstudio/download/) for automatic downloading of the necessary packages.
+- Latest versiones of [R](https://www.r-project.org/) and [RStudio IDE](https://www.rstudio.com/products/rstudio/download/).
 - R packages: [`fpp2`](https://cran.r-project.org/web/packages/fpp2/index.html), [`tseries`](https://cran.r-project.org/web/packages/tseries/index.html), [`TSA`](https://cran.r-project.org/web/packages/TSA/index.html), [`seastests`](https://cran.r-project.org/web/packages/seastests/index.html), [`forecast`](https://cran.r-project.org/web/packages/forecast/index.html), [`plotly`](https://plotly.com/r/), [`prettydoc`](https://prettydoc.statr.me/), [`stringi`](https://cran.r-project.org/web/packages/stringi/index.html), [`stringr`](https://cran.r-project.org/web/packages/stringr/index.html), [`polynom`](https://cran.r-project.org/web/packages/polynom/index.html), [`parallel`](https://stat.ethz.ch/R-manual/R-devel/library/parallel/doc/parallel.pdf).
-- [rtools](https://cran.r-project.org/bin/windows/Rtools/).
+- Latest version of [rtools](https://cran.r-project.org/bin/windows/Rtools/).
 
 Once [R](https://www.r-project.org/),  [RStudio IDE](https://www.rstudio.com/products/rstudio/download/) and [rtools](https://cran.r-project.org/bin/windows/Rtools/) have been installed, you can run [`installation.R`](installation.R) to automatically install all R-packages needed and [`test-installation.R`](test-installation.R) to check if all libraries have been correctly added.
 
